@@ -1,10 +1,19 @@
-import { useState, type ReactElement } from 'react'
+import { useState, useEffect, type ReactElement } from 'react'
 import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
+import { useQuery, useMutation } from 'convex/react'
+import { api } from '../convex/_generated/api'
 import './App.css'
 
 import AppShell from './components/layout/app-shell'
 import type { Page } from './config/navigation'
 import { getPageFromPath, getPagePath } from './config/routes'
+import {
+  authTokenStorageKey,
+  authUserStorageKey,
+  mapBackendRole,
+  type AuthUser,
+} from './lib/auth'
+import BrandLoader from './components/brand/brand-loader'
 import {
   AllocationPage,
   AllocationStatusPage,
@@ -28,8 +37,7 @@ import {
   RegisterPage,
   ResetPasswordPage,
   type DepositRecord,
-  type MockUser,
-} from './pages/app-pages'
+} from './pages'
 import { initialDepositRecords } from './pages/page-data'
 
 const authPages: Page[] = ['login', 'register', 'resetPassword']
@@ -39,19 +47,77 @@ function App() {
   const navigate = useNavigate()
   const page = getPageFromPath(location.pathname)
   const [records, setRecords] = useState<DepositRecord[]>(initialDepositRecords)
-  const [user, setUser] = useState<MockUser | null>(null)
+  
+  const [token, setToken] = useState<string | null>(() => localStorage.getItem(authTokenStorageKey))
+  const [user, setUser] = useState<AuthUser | null>(() => {
+    const saved = localStorage.getItem(authUserStorageKey)
+    return saved ? JSON.parse(saved) : null
+  })
+  const [loading, setLoading] = useState(true)
+
+  const currentUserData = useQuery(api.auth.getUserByToken, token ? { token } : 'skip')
+  const logoutUser = useMutation(api.auth.logoutUser)
+
+  useEffect(() => {
+    if (token) {
+      if (currentUserData === undefined) {
+        setLoading(true)
+      } else if (currentUserData === null) {
+        localStorage.removeItem(authTokenStorageKey)
+        localStorage.removeItem(authUserStorageKey)
+        setToken(null)
+        setUser(null)
+        setLoading(false)
+      } else {
+        const mappedUser: AuthUser = {
+          id: currentUserData.id,
+          name: currentUserData.name,
+          email: currentUserData.email,
+          role: mapBackendRole(currentUserData.role),
+        }
+        setUser(mappedUser)
+        localStorage.setItem(authUserStorageKey, JSON.stringify(mappedUser))
+        setLoading(false)
+      }
+    } else {
+      setLoading(false)
+      setUser(null)
+    }
+  }, [token, currentUserData])
 
   function goToPage(nextPage: Page) {
     navigate(getPagePath(nextPage))
   }
 
-  function handleLogout() {
+  async function handleLogin(newToken: string, nextUser: AuthUser) {
+    localStorage.setItem(authTokenStorageKey, newToken)
+    localStorage.setItem(authUserStorageKey, JSON.stringify(nextUser))
+    setToken(newToken)
+    setUser(nextUser)
+    goToPage('dashboard')
+  }
+
+  async function handleLogout() {
+    if (token) {
+      try {
+        await logoutUser({ token })
+      } catch (err) {
+        console.error('Failed to revoke session on server:', err)
+      }
+    }
+    localStorage.removeItem(authTokenStorageKey)
+    localStorage.removeItem(authUserStorageKey)
+    setToken(null)
     setUser(null)
     goToPage('login')
   }
 
   function requireAuth(element: ReactElement) {
     return user || authPages.includes(page) ? element : <Navigate replace to={getPagePath('login')} />
+  }
+
+  if (loading) {
+    return <BrandLoader />
   }
 
   return (
@@ -90,10 +156,7 @@ function App() {
           path={getPagePath('login')}
           element={
             <LoginPage
-              onLogin={(nextUser) => {
-                setUser(nextUser)
-                goToPage('dashboard')
-              }}
+              onLogin={handleLogin}
               goToPage={goToPage}
             />
           }

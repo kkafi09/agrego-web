@@ -9,7 +9,6 @@ export default defineSchema({
       v.literal("admin"),
       v.literal("cooperative"),
       v.literal("buyer"),
-      v.literal("member"),
     ),
     passwordHash: v.string(),
     joinedAt: v.number(),

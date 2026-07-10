@@ -1,4 +1,4 @@
-import type { DepositRecord } from './app-pages'
+import type { DepositRecord } from './shared'
 
 export const initialDepositRecords: DepositRecord[] = [
   {

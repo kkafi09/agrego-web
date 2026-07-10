@@ -1,15 +1,11 @@
 import { v } from "convex/values";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
-import { mutation } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
+
 
 type UserRole = "admin" | "cooperative" | "buyer" | "member";
 
-const userRoleValidator = v.union(
-  v.literal("admin"),
-  v.literal("cooperative"),
-  v.literal("buyer"),
-  v.literal("member"),
-);
+
 
 async function hashPassword(password: string) {
   const bytes = new TextEncoder().encode(password);
@@ -46,6 +42,7 @@ export const registerUser = mutation({
     name: v.string(),
     email: v.string(),
     password: v.string(),
+    role: v.union(v.literal("cooperative"), v.literal("buyer")),
   },
   handler: async (ctx, args) => {
     if (args.password.length < 6) {
@@ -61,13 +58,24 @@ export const registerUser = mutation({
       throw new Error("Email sudah terdaftar.");
     }
 
-    return ctx.db.insert("users", {
+    const userId = await ctx.db.insert("users", {
       name: args.name,
       email: args.email,
-      role: "member",
+      role: args.role,
       passwordHash: await hashPassword(args.password),
       joinedAt: Date.now(),
     });
+
+    if (args.role === "cooperative") {
+      await ctx.db.insert("koperasiProfiles", {
+        adminId: userId,
+        name: args.name,
+        location: "Jawa Barat",
+        createdAt: Date.now(),
+      });
+    }
+
+    return userId;
   },
 });
 
@@ -218,3 +226,32 @@ export const changePassword = mutation({
     });
   },
 });
+
+export const getUserByToken = query({
+  args: {
+    token: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const session = await ctx.db
+      .query("authSessions")
+      .withIndex("by_token", (q) => q.eq("token", args.token))
+      .first();
+
+    if (!session || session.revokedAt) {
+      return null;
+    }
+
+    const user = await ctx.db.get(session.userId);
+    if (!user) {
+      return null;
+    }
+
+    return {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    };
+  },
+});
+

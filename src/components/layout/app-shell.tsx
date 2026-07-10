@@ -29,8 +29,8 @@ export default function AppShell({
   // Renders login/register screens clean without sidebar/headers
   if (isAuthPage || !user) {
     return (
-      <div className="auth-layout">
-        <main className="auth-main-content">{children}</main>
+      <div className="min-h-screen min-h-svh flex items-center justify-center bg-[#fcfdfa] p-6">
+        <main className="w-full max-w-[440px] flex flex-col gap-2">{children}</main>
       </div>
     )
   }
