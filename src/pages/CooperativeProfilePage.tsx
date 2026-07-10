@@ -2,6 +2,9 @@ import { useState } from 'react'
 import { useQuery, useMutation } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import type { AuthUser } from '../lib/auth'
+import { Button } from '../components/ui/button'
+import { Input } from '../components/ui/input'
+import { Label } from '../components/ui/label'
 
 export function CooperativeProfilePage({ user }: { user: AuthUser | null }) {
   const [isEditing, setIsEditing] = useState(false)
@@ -57,7 +60,7 @@ export function CooperativeProfilePage({ user }: { user: AuthUser | null }) {
           </div>
           {isEditing ? (
             <form
-              className="mt-4 grid gap-4 [&_label]:grid [&_label]:gap-2 [&_label>span]:text-sm [&_label>span]:font-bold [&_label>span]:text-slate-700 [&_input]:h-11 [&_input]:rounded-lg [&_input]:border [&_input]:border-slate-200 [&_input]:bg-white [&_input]:px-3 [&_input]:text-sm [&_input]:font-semibold [&_input]:outline-none [&_input:focus]:border-emerald-500 [&_input:focus]:ring-4 [&_input:focus]:ring-emerald-100 [&_select]:h-11 [&_select]:rounded-lg [&_select]:border [&_select]:border-slate-200 [&_select]:bg-white [&_select]:px-3 [&_select]:text-sm [&_select]:font-semibold [&_select]:outline-none [&_select:focus]:border-emerald-500 [&_select:focus]:ring-4 [&_select:focus]:ring-emerald-100 [&_textarea]:rounded-lg [&_textarea]:border [&_textarea]:border-slate-200 [&_textarea]:bg-white [&_textarea]:px-3 [&_textarea]:py-3 [&_textarea]:text-sm [&_textarea]:font-semibold [&_textarea]:outline-none [&_textarea:focus]:border-emerald-500 [&_textarea:focus]:ring-4 [&_textarea:focus]:ring-emerald-100"
+              className="mt-4 grid gap-4"
               onSubmit={async (event) => {
                 event.preventDefault()
                 try {
@@ -80,72 +83,78 @@ export function CooperativeProfilePage({ user }: { user: AuthUser | null }) {
                 }
               }}
             >
-              <div className="grid gap-4 sm:grid-cols-2 [&_label]:grid [&_label]:gap-2 [&_label>span]:text-sm [&_label>span]:font-bold [&_label>span]:text-slate-700 [&_input]:h-11 [&_input]:rounded-lg [&_input]:border [&_input]:border-slate-200 [&_input]:bg-white [&_input]:px-3 [&_input]:text-sm [&_input]:font-semibold [&_input]:outline-none [&_input:focus]:border-emerald-500 [&_input:focus]:ring-4 [&_input:focus]:ring-emerald-100 [&_select]:h-11 [&_select]:rounded-lg [&_select]:border [&_select]:border-slate-200 [&_select]:bg-white [&_select]:px-3 [&_select]:text-sm [&_select]:font-semibold [&_select]:outline-none [&_select:focus]:border-emerald-500 [&_select:focus]:ring-4 [&_select:focus]:ring-emerald-100">
-                <label>
-                  <span>Nama Koperasi</span>
-                  <input
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-2">
+                  <Label htmlFor="koperasi-name">Nama Koperasi</Label>
+                  <Input
+                    id="koperasi-name"
                     value={form.name}
                     onChange={(event) =>
                       setForm((current) => ({ ...current, name: event.target.value }))
                     }
                     required
                   />
-                </label>
-                <label>
-                  <span>Wilayah</span>
-                  <input
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="koperasi-location">Wilayah</Label>
+                  <Input
+                    id="koperasi-location"
                     value={form.location}
                     onChange={(event) =>
                       setForm((current) => ({ ...current, location: event.target.value }))
                     }
                     required
                   />
-                </label>
+                </div>
               </div>
-              <div className="grid gap-4 sm:grid-cols-2 [&_label]:grid [&_label]:gap-2 [&_label>span]:text-sm [&_label>span]:font-bold [&_label>span]:text-slate-700 [&_input]:h-11 [&_input]:rounded-lg [&_input]:border [&_input]:border-slate-200 [&_input]:bg-white [&_input]:px-3 [&_input]:text-sm [&_input]:font-semibold [&_input]:outline-none [&_input:focus]:border-emerald-500 [&_input:focus]:ring-4 [&_input:focus]:ring-emerald-100 [&_select]:h-11 [&_select]:rounded-lg [&_select]:border [&_select]:border-slate-200 [&_select]:bg-white [&_select]:px-3 [&_select]:text-sm [&_select]:font-semibold [&_select]:outline-none [&_select:focus]:border-emerald-500 [&_select:focus]:ring-4 [&_select:focus]:ring-emerald-100">
-                <label>
-                  <span>Alamat</span>
-                  <input
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-2">
+                  <Label htmlFor="koperasi-address">Alamat</Label>
+                  <Input
+                    id="koperasi-address"
                     value={form.address}
                     onChange={(event) =>
                       setForm((current) => ({ ...current, address: event.target.value }))
                     }
                   />
-                </label>
-                <label>
-                  <span>Nama Ketua</span>
-                  <input
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="koperasi-leader">Nama Ketua</Label>
+                  <Input
+                    id="koperasi-leader"
                     value={form.leaderName}
                     onChange={(event) =>
                       setForm((current) => ({ ...current, leaderName: event.target.value }))
                     }
                   />
-                </label>
+                </div>
               </div>
-              <div className="grid gap-4 sm:grid-cols-2 [&_label]:grid [&_label]:gap-2 [&_label>span]:text-sm [&_label>span]:font-bold [&_label>span]:text-slate-700 [&_input]:h-11 [&_input]:rounded-lg [&_input]:border [&_input]:border-slate-200 [&_input]:bg-white [&_input]:px-3 [&_input]:text-sm [&_input]:font-semibold [&_input]:outline-none [&_input:focus]:border-emerald-500 [&_input:focus]:ring-4 [&_input:focus]:ring-emerald-100 [&_select]:h-11 [&_select]:rounded-lg [&_select]:border [&_select]:border-slate-200 [&_select]:bg-white [&_select]:px-3 [&_select]:text-sm [&_select]:font-semibold [&_select]:outline-none [&_select:focus]:border-emerald-500 [&_select:focus]:ring-4 [&_select:focus]:ring-emerald-100">
-                <label>
-                  <span>Email Kontak</span>
-                  <input
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-2">
+                  <Label htmlFor="koperasi-email">Email Kontak</Label>
+                  <Input
+                    id="koperasi-email"
                     type="email"
                     value={form.contactEmail}
                     onChange={(event) =>
                       setForm((current) => ({ ...current, contactEmail: event.target.value }))
                     }
                   />
-                </label>
-                <label>
-                  <span>Telepon Kontak</span>
-                  <input
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="koperasi-phone">Telepon Kontak</Label>
+                  <Input
+                    id="koperasi-phone"
                     value={form.contactPhone}
                     onChange={(event) =>
                       setForm((current) => ({ ...current, contactPhone: event.target.value }))
                     }
                   />
-                </label>
+                </div>
               </div>
-              <button className="inline-flex items-center justify-center rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-black text-white shadow-sm transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50" type="submit">
+              <Button className="w-fit bg-emerald-700 hover:bg-emerald-800" type="submit">
                 Simpan Profil
-              </button>
+              </Button>
             </form>
           ) : (
             <dl className="grid gap-3">
@@ -157,7 +166,7 @@ export function CooperativeProfilePage({ user }: { user: AuthUser | null }) {
                 <dt>Kontak</dt>
                 <dd>
                   {activeProfile?.contactEmail || activeProfile?.contactPhone
-                    ? `${activeProfile.contactEmail || '-'} / ${activeProfile.contactPhone || '-'}`
+                    ? `${activeProfile?.contactEmail || '-'} / ${activeProfile?.contactPhone || '-'}`
                     : '-'}
                 </dd>
               </div>
@@ -167,8 +176,9 @@ export function CooperativeProfilePage({ user }: { user: AuthUser | null }) {
               </div>
             </dl>
           )}
-          <button
-            className="text-sm font-black text-emerald-700 transition hover:text-emerald-800"
+          <Button
+            className="mt-4 px-0 text-sm font-black text-emerald-700 hover:text-emerald-800"
+            variant="link"
             type="button"
             onClick={() => {
               if (isEditing) {
@@ -179,7 +189,7 @@ export function CooperativeProfilePage({ user }: { user: AuthUser | null }) {
             }}
           >
             {isEditing ? 'Batal Edit' : 'Edit Profil'}
-          </button>
+          </Button>
         </article>
         <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="grid gap-1 [&_h2]:text-lg [&_h2]:font-black [&_h2]:text-slate-950">

@@ -1,5 +1,7 @@
 import type { InputHTMLAttributes } from 'react'
 import { cn } from '../../lib/utils'
+import { Input } from '../ui/input'
+import { Label } from '../ui/label'
 
 interface NumberUnitInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'onChange'> {
   label?: string
@@ -20,15 +22,15 @@ export default function NumberUnitInput({
   return (
     <div className={cn('grid gap-2', className)}>
       {label && (
-        <label htmlFor={id} className="text-sm font-bold text-slate-700">
+        <Label htmlFor={id} className="text-sm font-bold text-slate-700">
           {label}
-        </label>
+        </Label>
       )}
       <div className="flex overflow-hidden rounded-lg border border-slate-200 bg-white transition focus-within:border-emerald-500 focus-within:ring-4 focus-within:ring-emerald-100">
-        <input
+        <Input
           id={id}
           type="number"
-          className="h-11 min-w-0 flex-1 border-0 bg-transparent px-3 text-sm font-semibold text-slate-800 outline-none placeholder:text-slate-400"
+          className="h-11 min-w-0 flex-1 rounded-none border-0 bg-transparent px-3 text-sm font-semibold text-slate-800 shadow-none outline-none placeholder:text-slate-400 focus-visible:ring-0"
           onChange={(e) => onChange(e.target.value)}
           aria-invalid={Boolean(error)}
           {...props}

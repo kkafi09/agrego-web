@@ -1,34 +1,53 @@
 import { useState } from 'react'
 import { useQuery, useMutation } from 'convex/react'
 import { api } from '../../convex/_generated/api'
+import { Button } from '../components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '../components/ui/dialog'
+import { Input } from '../components/ui/input'
+import { Label } from '../components/ui/label'
 
 type CommodityFormState = {
   _id?: string
   name: string
   unit: string
-  minimumQualityScore: number
+  minimumQualityScore: string
   qualityParameters: string
+}
+
+const emptyCommodityForm: CommodityFormState = {
+  name: '',
+  unit: '',
+  minimumQualityScore: '',
+  qualityParameters: '',
 }
 
 export function CommoditiesPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [saved, setSaved] = useState(false)
-  const [form, setForm] = useState<CommodityFormState>({
-    name: '',
-    unit: 'kg',
-    minimumQualityScore: 85,
-    qualityParameters: 'Kadar air, grade, kerusakan',
-  })
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [form, setForm] = useState<CommodityFormState>(emptyCommodityForm)
 
   const commodityList = useQuery(api.masterData.searchCommodities, { searchTerm })
-
   const createCommodity = useMutation(api.masterData.createCommodity)
   const updateCommodity = useMutation(api.masterData.updateCommodity)
   const deleteCommodity = useMutation(api.masterData.deleteCommodity)
 
-  function updateField(field: keyof CommodityFormState, value: any) {
+  function updateField(field: keyof CommodityFormState, value: string) {
     setSaved(false)
     setForm((current) => ({ ...current, [field]: value }))
+  }
+
+  function openCreateDialog() {
+    setForm(emptyCommodityForm)
+    setSaved(false)
+    setIsDialogOpen(true)
   }
 
   return (
@@ -43,7 +62,25 @@ export function CommoditiesPage() {
           <strong>{commodityList?.length ?? 0}</strong>
         </div>
       </header>
-      <section className="grid gap-4 sm:grid-cols-2 [&_label]:grid [&_label]:gap-2 [&_label>span]:text-sm [&_label>span]:font-bold [&_label>span]:text-slate-700 [&_input]:h-11 [&_input]:rounded-lg [&_input]:border [&_input]:border-slate-200 [&_input]:bg-white [&_input]:px-3 [&_input]:text-sm [&_input]:font-semibold [&_input]:outline-none [&_input:focus]:border-emerald-500 [&_input:focus]:ring-4 [&_input:focus]:ring-emerald-100 [&_select]:h-11 [&_select]:rounded-lg [&_select]:border [&_select]:border-slate-200 [&_select]:bg-white [&_select]:px-3 [&_select]:text-sm [&_select]:font-semibold [&_select]:outline-none [&_select:focus]:border-emerald-500 [&_select:focus]:ring-4 [&_select:focus]:ring-emerald-100 xl:grid-cols-3">
+
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <label className="grid gap-2 sm:w-80">
+            <Label>Cari Komoditas</Label>
+            <Input
+              className="h-11 rounded-lg bg-white text-sm font-semibold text-slate-800"
+              value={searchTerm}
+              onChange={(event) => setSearchTerm(event.target.value)}
+              placeholder="Cari komoditas"
+            />
+          </label>
+          <Button className="h-11 rounded-lg bg-emerald-700 text-sm font-black text-white hover:bg-emerald-800" type="button" onClick={openCreateDialog}>
+            Tambah Komoditas
+          </Button>
+        </div>
+      </section>
+
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {commodityList === undefined ? (
           <p className="text-sm font-bold text-emerald-700">Memuat data komoditas...</p>
         ) : commodityList.length === 0 ? (
@@ -51,55 +88,51 @@ export function CommoditiesPage() {
         ) : (
           commodityList.map((commodity) => (
             <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm" key={commodity._id}>
-              <div>
-                <span>{commodity._id}</span>
-                <strong>{commodity.name}</strong>
+              <div className="grid gap-1">
+                <span className="font-mono text-xs font-black text-emerald-700">{commodity._id}</span>
+                <strong className="text-base font-black text-slate-950">{commodity.name}</strong>
               </div>
-              <dl>
+              <dl className="mt-4 grid gap-3">
                 <div>
-                  <dt>Unit</dt>
-                  <dd>{commodity.unit}</dd>
+                  <dt className="text-xs font-semibold text-slate-500">Unit</dt>
+                  <dd className="mt-1 text-sm font-black text-slate-950">{commodity.unit}</dd>
                 </div>
                 <div>
-                  <dt>Minimum QS</dt>
-                  <dd>{commodity.minimumQualityScore}</dd>
+                  <dt className="text-xs font-semibold text-slate-500">Minimum QS</dt>
+                  <dd className="mt-1 text-sm font-black text-slate-950">{commodity.minimumQualityScore}</dd>
                 </div>
                 <div>
-                  <dt>Parameter</dt>
-                  <dd>{commodity.qualityParameters.join(', ')}</dd>
+                  <dt className="text-xs font-semibold text-slate-500">Parameter</dt>
+                  <dd className="mt-1 text-sm font-black text-slate-950">{commodity.qualityParameters.join(', ') || '-'}</dd>
                 </div>
               </dl>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <button
-                  className="text-sm font-black text-emerald-700 transition hover:text-emerald-800"
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
                   type="button"
                   onClick={() => {
                     setForm({
                       _id: commodity._id,
                       name: commodity.name,
                       unit: commodity.unit,
-                      minimumQualityScore: commodity.minimumQualityScore,
+                      minimumQualityScore: String(commodity.minimumQualityScore),
                       qualityParameters: commodity.qualityParameters.join(', '),
                     })
                     setSaved(false)
+                    setIsDialogOpen(true)
                   }}
                 >
                   Ubah
-                </button>
-                <button
-                  className="text-sm font-black text-rose-700 transition hover:text-rose-800"
+                </Button>
+                <Button
+                  variant="destructive"
                   type="button"
                   onClick={async () => {
                     if (window.confirm(`Hapus ${commodity.name}?`)) {
                       try {
                         await deleteCommodity({ commodityId: commodity._id })
                         if (form._id === commodity._id) {
-                          setForm({
-                            name: '',
-                            unit: 'kg',
-                            minimumQualityScore: 85,
-                            qualityParameters: '',
-                          })
+                          setForm(emptyCommodityForm)
                         }
                       } catch (err) {
                         alert('Gagal menghapus komoditas: ' + (err as Error).message)
@@ -108,130 +141,86 @@ export function CommoditiesPage() {
                   }}
                 >
                   Hapus
-                </button>
+                </Button>
               </div>
             </article>
           ))
         )}
       </section>
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 [&_label]:grid [&_label]:gap-2 [&_label>span]:text-sm [&_label>span]:font-bold [&_label>span]:text-slate-700 [&_input]:h-11 [&_input]:rounded-lg [&_input]:border [&_input]:border-slate-200 [&_input]:bg-white [&_input]:px-3 [&_input]:text-sm [&_input]:font-semibold [&_input]:outline-none [&_input:focus]:border-emerald-500 [&_input:focus]:ring-4 [&_input:focus]:ring-emerald-100 [&_select]:h-11 [&_select]:rounded-lg [&_select]:border [&_select]:border-slate-200 [&_select]:bg-white [&_select]:px-3 [&_select]:text-sm [&_select]:font-semibold [&_select]:outline-none [&_select:focus]:border-emerald-500 [&_select:focus]:ring-4 [&_select:focus]:ring-emerald-100">
-          <label>
-            <span>Cari Komoditas</span>
-            <input
-              value={searchTerm}
-              onChange={(event) => setSearchTerm(event.target.value)}
-              placeholder="Cari komoditas"
-            />
-          </label>
-        </div>
-        <div className="grid gap-1 [&_h2]:text-lg [&_h2]:font-black [&_h2]:text-slate-950">
-          <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-700">Tambah / Ubah Komoditas</p>
-          <h2>Parameter kualitas</h2>
-        </div>
-        <form
-          className="mt-4 grid gap-4 [&_label]:grid [&_label]:gap-2 [&_label>span]:text-sm [&_label>span]:font-bold [&_label>span]:text-slate-700 [&_input]:h-11 [&_input]:rounded-lg [&_input]:border [&_input]:border-slate-200 [&_input]:bg-white [&_input]:px-3 [&_input]:text-sm [&_input]:font-semibold [&_input]:outline-none [&_input:focus]:border-emerald-500 [&_input:focus]:ring-4 [&_input:focus]:ring-emerald-100 [&_select]:h-11 [&_select]:rounded-lg [&_select]:border [&_select]:border-slate-200 [&_select]:bg-white [&_select]:px-3 [&_select]:text-sm [&_select]:font-semibold [&_select]:outline-none [&_select:focus]:border-emerald-500 [&_select:focus]:ring-4 [&_select:focus]:ring-emerald-100 [&_textarea]:rounded-lg [&_textarea]:border [&_textarea]:border-slate-200 [&_textarea]:bg-white [&_textarea]:px-3 [&_textarea]:py-3 [&_textarea]:text-sm [&_textarea]:font-semibold [&_textarea]:outline-none [&_textarea:focus]:border-emerald-500 [&_textarea:focus]:ring-4 [&_textarea:focus]:ring-emerald-100"
-          onSubmit={async (event) => {
-            event.preventDefault()
-            const paramsArray = form.qualityParameters
-              .split(',')
-              .map((p) => p.trim())
-              .filter(Boolean)
 
-            try {
-              if (form._id) {
-                await updateCommodity({
-                  commodityId: form._id as any,
-                  name: form.name,
-                  unit: form.unit,
-                  minimumQualityScore: Number(form.minimumQualityScore),
-                  qualityParameters: paramsArray,
-                })
-              } else {
-                await createCommodity({
-                  name: form.name,
-                  unit: form.unit,
-                  minimumQualityScore: Number(form.minimumQualityScore),
-                  qualityParameters: paramsArray,
-                })
-              }
-              setSaved(true)
-              setForm({
-                name: '',
-                unit: 'kg',
-                minimumQualityScore: 85,
-                qualityParameters: 'Kadar air, grade, kerusakan',
-              })
-            } catch (err) {
-              alert('Gagal menyimpan data: ' + (err as Error).message)
-            }
-          }}
-        >
-          <div className="grid gap-4 sm:grid-cols-2 [&_label]:grid [&_label]:gap-2 [&_label>span]:text-sm [&_label>span]:font-bold [&_label>span]:text-slate-700 [&_input]:h-11 [&_input]:rounded-lg [&_input]:border [&_input]:border-slate-200 [&_input]:bg-white [&_input]:px-3 [&_input]:text-sm [&_input]:font-semibold [&_input]:outline-none [&_input:focus]:border-emerald-500 [&_input:focus]:ring-4 [&_input:focus]:ring-emerald-100 [&_select]:h-11 [&_select]:rounded-lg [&_select]:border [&_select]:border-slate-200 [&_select]:bg-white [&_select]:px-3 [&_select]:text-sm [&_select]:font-semibold [&_select]:outline-none [&_select:focus]:border-emerald-500 [&_select:focus]:ring-4 [&_select:focus]:ring-emerald-100">
-            <label>
-              <span>Nama Komoditas</span>
-              <input
-                value={form.name}
-                onChange={(event) => updateField('name', event.target.value)}
-                required
-              />
-            </label>
-            <label>
-              <span>Minimum QS</span>
-              <input
-                max="100"
-                min="0"
-                type="number"
-                value={form.minimumQualityScore}
-                onChange={(event) => updateField('minimumQualityScore', Number(event.target.value))}
-                required
-              />
-            </label>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2 [&_label]:grid [&_label]:gap-2 [&_label>span]:text-sm [&_label>span]:font-bold [&_label>span]:text-slate-700 [&_input]:h-11 [&_input]:rounded-lg [&_input]:border [&_input]:border-slate-200 [&_input]:bg-white [&_input]:px-3 [&_input]:text-sm [&_input]:font-semibold [&_input]:outline-none [&_input:focus]:border-emerald-500 [&_input:focus]:ring-4 [&_input:focus]:ring-emerald-100 [&_select]:h-11 [&_select]:rounded-lg [&_select]:border [&_select]:border-slate-200 [&_select]:bg-white [&_select]:px-3 [&_select]:text-sm [&_select]:font-semibold [&_select]:outline-none [&_select:focus]:border-emerald-500 [&_select:focus]:ring-4 [&_select:focus]:ring-emerald-100">
-            <label>
-              <span>Unit</span>
-              <input
-                value={form.unit}
-                onChange={(event) => updateField('unit', event.target.value)}
-                required
-              />
-            </label>
-            <label>
-              <span>Parameter Kualitas (pisahkan dengan koma)</span>
-              <input
-                value={form.qualityParameters}
-                onChange={(event) => updateField('qualityParameters', event.target.value)}
-                placeholder="Kadar air, grade, kerusakan"
-                required
-              />
-            </label>
-          </div>
-          <div className="mt-4 flex flex-wrap gap-3">
-            <button className="inline-flex items-center justify-center rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-black text-white shadow-sm transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50" type="submit">
-              {form._id ? 'Simpan Perubahan' : 'Tambah Komoditas'}
-            </button>
-            {form._id || form.name || form.unit !== 'kg' || form.minimumQualityScore !== 85 ? (
-              <button
-                className="text-sm font-black text-emerald-700 transition hover:text-emerald-800"
-                type="button"
-                onClick={() => {
-                  setForm({
-                    name: '',
-                    unit: 'kg',
-                    minimumQualityScore: 85,
-                    qualityParameters: 'Kadar air, grade, kerusakan',
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{form._id ? 'Ubah komoditas' : 'Tambah komoditas'}</DialogTitle>
+            <DialogDescription>Data ini akan digunakan di setoran, kontrak, QC, dan alokasi.</DialogDescription>
+          </DialogHeader>
+          <form
+            className="grid gap-4"
+            onSubmit={async (event) => {
+              event.preventDefault()
+              const paramsArray = form.qualityParameters
+                .split(',')
+                .map((p) => p.trim())
+                .filter(Boolean)
+
+              try {
+                if (form._id) {
+                  await updateCommodity({
+                    commodityId: form._id as any,
+                    name: form.name,
+                    unit: form.unit,
+                    minimumQualityScore: Number(form.minimumQualityScore),
+                    qualityParameters: paramsArray,
                   })
-                  setSaved(false)
-                }}
-              >
+                } else {
+                  await createCommodity({
+                    name: form.name,
+                    unit: form.unit,
+                    minimumQualityScore: Number(form.minimumQualityScore),
+                    qualityParameters: paramsArray,
+                  })
+                }
+                setSaved(true)
+                setForm(emptyCommodityForm)
+                setIsDialogOpen(false)
+              } catch (err) {
+                alert('Gagal menyimpan data: ' + (err as Error).message)
+              }
+            }}
+          >
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="grid gap-2">
+                <Label>Nama Komoditas</Label>
+                <Input className="h-11 rounded-lg bg-white text-sm font-semibold text-slate-800" value={form.name} onChange={(event) => updateField('name', event.target.value)} required />
+              </label>
+              <label className="grid gap-2">
+                <Label>Minimum QS</Label>
+                <Input className="h-11 rounded-lg bg-white text-sm font-semibold text-slate-800" max="100" min="0" type="number" value={form.minimumQualityScore} onChange={(event) => updateField('minimumQualityScore', event.target.value)} required />
+              </label>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="grid gap-2">
+                <Label>Unit</Label>
+                <Input className="h-11 rounded-lg bg-white text-sm font-semibold text-slate-800" value={form.unit} onChange={(event) => updateField('unit', event.target.value)} required />
+              </label>
+              <label className="grid gap-2">
+                <Label>Parameter Kualitas</Label>
+                <Input className="h-11 rounded-lg bg-white text-sm font-semibold text-slate-800" value={form.qualityParameters} onChange={(event) => updateField('qualityParameters', event.target.value)} placeholder="Pisahkan dengan koma" required />
+              </label>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" type="button" onClick={() => setIsDialogOpen(false)}>
                 Batal
-              </button>
-            ) : null}
-          </div>
-          {saved ? <p className="text-sm font-bold text-emerald-700">Data komoditas berhasil disimpan.</p> : null}
-        </form>
-      </section>
+              </Button>
+              <Button className="bg-emerald-700 text-white hover:bg-emerald-800" type="submit">
+                {form._id ? 'Simpan Perubahan' : 'Tambah Komoditas'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {saved ? <p className="text-sm font-bold text-emerald-700">Data komoditas berhasil disimpan.</p> : null}
     </>
   )
 }

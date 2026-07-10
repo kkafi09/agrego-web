@@ -8,7 +8,7 @@ export function AllocationPage() {
   const defaultKoperasi = useQuery(api.koperasi.getDefaultKoperasi)
   const koperasiId = defaultKoperasi?._id
   const contracts = useQuery(api.allocations.contractsNeedingAllocation, koperasiId ? { koperasiId } : 'skip')
-  const contractRows = contracts ?? []
+  const contractRows = useMemo(() => contracts ?? [], [contracts])
   const [selectedContractId, setSelectedContractId] = useState<string>('')
   const candidates = useQuery(
     api.allocations.availableDepositsForContract,
@@ -27,7 +27,7 @@ export function AllocationPage() {
   }, [contractRows, selectedContractId])
 
   const selectedContract = contractRows.find((contract) => contract.contractId === selectedContractId)
-  const matchingCandidates = candidates ?? []
+  const matchingCandidates = useMemo(() => candidates ?? [], [candidates])
   const recommendedKg = matchingCandidates.reduce((total, candidate) => total + candidate.availableWeightKg, 0)
   const selectedKg = matchingCandidates
     .filter((candidate) => selectedDepositIds.includes(candidate.depositId))

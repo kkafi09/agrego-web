@@ -1,6 +1,17 @@
 import { useState } from 'react'
 import { useMutation, useQuery } from 'convex/react'
 import { api } from '../../convex/_generated/api'
+import { Button } from '../components/ui/button'
+import { Input } from '../components/ui/input'
+import { Label } from '../components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../components/ui/select'
+import { Textarea } from '../components/ui/textarea'
 import {
   type ContractFormErrors,
   type ContractFormState,
@@ -92,61 +103,69 @@ export function NewContractPage() {
             <h2>Spesifikasi pembelian</h2>
           </div>
           {!canSubmit ? <p className="text-sm font-bold text-emerald-700">Tambahkan profil koperasi, buyer, dan komoditas sebelum membuat kontrak.</p> : null}
-          <label>
-            <span>Buyer</span>
-            <select aria-invalid={Boolean(errors.buyerId)} value={form.buyerId} onChange={(event) => updateField('buyerId', event.target.value)}>
-              <option value="">Pilih buyer</option>
-              {buyers?.map((buyer) => (
-                <option key={buyer.id} value={buyer.id}>{buyer.name}</option>
-              ))}
-            </select>
+          <label className="grid gap-2">
+            <Label>Buyer</Label>
+            <Select value={form.buyerId} onValueChange={(value) => updateField('buyerId', value)}>
+              <SelectTrigger className="h-11 w-full rounded-lg bg-white text-sm font-semibold text-slate-800" aria-invalid={Boolean(errors.buyerId)}>
+                <SelectValue placeholder="Pilih buyer" />
+              </SelectTrigger>
+              <SelectContent>
+                {buyers?.map((buyer) => (
+                  <SelectItem key={buyer.id} value={buyer.id}>{buyer.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             {errors.buyerId ? <small className="text-xs font-semibold text-rose-600">{errors.buyerId}</small> : null}
           </label>
-          <label>
-            <span>Komoditas</span>
-            <select aria-invalid={Boolean(errors.commodityId)} value={form.commodityId} onChange={(event) => updateField('commodityId', event.target.value)}>
-              <option value="">Pilih komoditas</option>
-              {commodities?.map((commodity) => (
-                <option key={commodity._id} value={commodity._id}>{commodity.name}</option>
-              ))}
-            </select>
+          <label className="grid gap-2">
+            <Label>Komoditas</Label>
+            <Select value={form.commodityId} onValueChange={(value) => updateField('commodityId', value)}>
+              <SelectTrigger className="h-11 w-full rounded-lg bg-white text-sm font-semibold text-slate-800" aria-invalid={Boolean(errors.commodityId)}>
+                <SelectValue placeholder="Pilih komoditas" />
+              </SelectTrigger>
+              <SelectContent>
+                {commodities?.map((commodity) => (
+                  <SelectItem key={commodity._id} value={commodity._id}>{commodity.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             {errors.commodityId ? <small className="text-xs font-semibold text-rose-600">{errors.commodityId}</small> : null}
           </label>
-          <label>
-            <span>Judul Kontrak</span>
-            <input value={form.title} onChange={(event) => updateField('title', event.target.value)} />
+          <label className="grid gap-2">
+            <Label>Judul Kontrak</Label>
+            <Input className="h-11 rounded-lg bg-white text-sm font-semibold text-slate-800" value={form.title} onChange={(event) => updateField('title', event.target.value)} />
           </label>
           <div className="grid gap-4 sm:grid-cols-2 [&_label]:grid [&_label]:gap-2 [&_label>span]:text-sm [&_label>span]:font-bold [&_label>span]:text-slate-700 [&_input]:h-11 [&_input]:rounded-lg [&_input]:border [&_input]:border-slate-200 [&_input]:bg-white [&_input]:px-3 [&_input]:text-sm [&_input]:font-semibold [&_input]:outline-none [&_input:focus]:border-emerald-500 [&_input:focus]:ring-4 [&_input:focus]:ring-emerald-100">
             <label>
               <span>Target Volume (kg)</span>
-              <input aria-invalid={Boolean(errors.targetKg)} min="1" type="number" value={form.targetKg} onChange={(event) => updateField('targetKg', event.target.value)} />
+              <Input className="h-11 rounded-lg bg-white text-sm font-semibold text-slate-800" aria-invalid={Boolean(errors.targetKg)} min="1" type="number" value={form.targetKg} onChange={(event) => updateField('targetKg', event.target.value)} />
               {errors.targetKg ? <small className="text-xs font-semibold text-rose-600">{errors.targetKg}</small> : null}
             </label>
             <label>
               <span>Quality Minimum</span>
-              <input aria-invalid={Boolean(errors.minimumQuality)} max="100" min="0" type="number" value={form.minimumQuality} onChange={(event) => updateField('minimumQuality', event.target.value)} />
+              <Input className="h-11 rounded-lg bg-white text-sm font-semibold text-slate-800" aria-invalid={Boolean(errors.minimumQuality)} max="100" min="0" type="number" value={form.minimumQuality} onChange={(event) => updateField('minimumQuality', event.target.value)} />
               {errors.minimumQuality ? <small className="text-xs font-semibold text-rose-600">{errors.minimumQuality}</small> : null}
             </label>
           </div>
           <div className="grid gap-4 sm:grid-cols-2 [&_label]:grid [&_label]:gap-2 [&_label>span]:text-sm [&_label>span]:font-bold [&_label>span]:text-slate-700 [&_input]:h-11 [&_input]:rounded-lg [&_input]:border [&_input]:border-slate-200 [&_input]:bg-white [&_input]:px-3 [&_input]:text-sm [&_input]:font-semibold [&_input]:outline-none [&_input:focus]:border-emerald-500 [&_input:focus]:ring-4 [&_input:focus]:ring-emerald-100">
             <label>
               <span>Harga per Kg</span>
-              <input aria-invalid={Boolean(errors.pricePerKg)} min="1" type="number" value={form.pricePerKg} onChange={(event) => updateField('pricePerKg', event.target.value)} />
+              <Input className="h-11 rounded-lg bg-white text-sm font-semibold text-slate-800" aria-invalid={Boolean(errors.pricePerKg)} min="1" type="number" value={form.pricePerKg} onChange={(event) => updateField('pricePerKg', event.target.value)} />
               {errors.pricePerKg ? <small className="text-xs font-semibold text-rose-600">{errors.pricePerKg}</small> : null}
             </label>
             <label>
               <span>Tenggat</span>
-              <input aria-invalid={Boolean(errors.deadline)} type="date" value={form.deadline} onChange={(event) => updateField('deadline', event.target.value)} />
+              <Input className="h-11 rounded-lg bg-white text-sm font-semibold text-slate-800" aria-invalid={Boolean(errors.deadline)} type="date" value={form.deadline} onChange={(event) => updateField('deadline', event.target.value)} />
               {errors.deadline ? <small className="text-xs font-semibold text-rose-600">{errors.deadline}</small> : null}
             </label>
           </div>
           <label>
             <span>Catatan</span>
-            <textarea value={form.notes} onChange={(event) => updateField('notes', event.target.value)} />
+            <Textarea className="min-h-28 rounded-lg bg-white text-sm font-semibold text-slate-800" value={form.notes} onChange={(event) => updateField('notes', event.target.value)} />
           </label>
-          <button className="inline-flex items-center justify-center rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-black text-white shadow-sm transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50" disabled={!canSubmit} type="submit">
+          <Button className="h-11 rounded-lg bg-emerald-700 text-sm font-black text-white shadow-sm hover:bg-emerald-800" disabled={!canSubmit} type="submit">
             Simpan Kontrak
-          </button>
+          </Button>
         </form>
         <aside className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="grid gap-1 [&_h2]:text-lg [&_h2]:font-black [&_h2]:text-slate-950">

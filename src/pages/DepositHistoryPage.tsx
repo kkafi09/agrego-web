@@ -30,7 +30,7 @@ export function DepositHistoryPage() {
   const defaultKoperasi = useQuery(api.koperasi.getDefaultKoperasi)
   const koperasiId = defaultKoperasi?._id
   const records = useQuery(api.deposits.listDeposits, koperasiId ? { koperasiId } : 'skip') as DepositRow[] | undefined
-  const deposits = records ?? []
+  const deposits = useMemo(() => records ?? [], [records])
   const [selectedDepositId, setSelectedDepositId] = useState<string | undefined>()
   const [searchTerm, setSearchTerm] = useState('')
 

@@ -1,6 +1,13 @@
 import { useState } from 'react'
 import { useQuery } from 'convex/react'
 import { api } from '../../convex/_generated/api'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../components/ui/select'
 import { formatDate, formatKg, mapDepositStatus } from './shared'
 
 export function QcDepositDetailPage() {
@@ -26,12 +33,16 @@ export function QcDepositDetailPage() {
       <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <label className="grid gap-2">
           <span className="text-sm font-bold text-slate-700">Pilih setoran menunggu QC</span>
-          <select className="h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100" value={selectedDepositId} onChange={(event) => setSelectedDepositId(event.target.value)}>
-            <option value="">Pilih setoran</option>
-            {deposits?.map((item) => (
-              <option key={item.id} value={item.id}>{item.depositNumber} / {item.memberName}</option>
-            ))}
-          </select>
+          <Select value={selectedDepositId} onValueChange={setSelectedDepositId}>
+            <SelectTrigger className="h-11 w-full rounded-lg bg-white text-sm font-semibold text-slate-800">
+              <SelectValue placeholder="Pilih setoran" />
+            </SelectTrigger>
+            <SelectContent>
+              {deposits?.map((item) => (
+                <SelectItem key={item.id} value={item.id}>{item.depositNumber} / {item.memberName}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </label>
       </section>
 

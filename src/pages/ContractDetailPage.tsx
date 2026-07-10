@@ -2,6 +2,13 @@ import { useState } from 'react'
 import { useMutation, useQuery } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../components/ui/select'
+import {
   type ContractStatus,
   formatDate,
   formatKg,
@@ -88,23 +95,28 @@ export function ContractDetailPage() {
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 [&_label]:grid [&_label]:gap-2 [&_label>span]:text-sm [&_label>span]:font-bold [&_label>span]:text-slate-700 [&_select]:h-11 [&_select]:rounded-lg [&_select]:border [&_select]:border-slate-200 [&_select]:bg-white [&_select]:px-3 [&_select]:text-sm [&_select]:font-semibold [&_select]:outline-none [&_select:focus]:border-emerald-500 [&_select:focus]:ring-4 [&_select:focus]:ring-emerald-100">
           <label>
             <span>Status Kontrak</span>
-            <select
+            <Select
               disabled={savingStatus}
               value={contract.status}
-              onChange={async (event) => {
+              onValueChange={async (value) => {
                 setSavingStatus(true)
                 await updateContractStatus({
                   contractId: contract.contractId,
-                  status: event.target.value as ContractStatus,
+                  status: value as ContractStatus,
                 })
                 setSavingStatus(false)
               }}
             >
-              <option value="draft">Baru</option>
-              <option value="active">Aktif</option>
-              <option value="completed">Selesai</option>
-              <option value="cancelled">Batal</option>
-            </select>
+              <SelectTrigger className="h-11 w-full rounded-lg bg-white text-sm font-semibold text-slate-800">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="draft">Baru</SelectItem>
+                <SelectItem value="active">Aktif</SelectItem>
+                <SelectItem value="completed">Selesai</SelectItem>
+                <SelectItem value="cancelled">Batal</SelectItem>
+              </SelectContent>
+            </Select>
           </label>
         </div>
       </section>

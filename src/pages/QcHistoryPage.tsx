@@ -1,13 +1,16 @@
 import { useQuery } from 'convex/react'
+import { useNavigate } from 'react-router-dom'
 import { api } from '../../convex/_generated/api'
+import { getPagePath } from '../config/routes'
 import { getStatusStyle } from '../config/status-config'
-import { formatDate, mapQualityDecision } from './shared'
+import { mapQualityDecision } from './shared'
 
 export function QcHistoryPage() {
   const defaultKoperasi = useQuery(api.koperasi.getDefaultKoperasi)
+  const navigate = useNavigate()
   const koperasiId = defaultKoperasi?._id
-  const qcRecords = useQuery(api.qualityChecks.listQualityChecks, koperasiId ? { koperasiId } : 'skip')
-  const records = qcRecords ?? []
+  const qualityChecks = useQuery(api.qualityChecks.listQualityChecks, koperasiId ? { koperasiId } : 'skip')
+  const records = qualityChecks ?? []
   const averageScore =
     records.length > 0
       ? Math.round(records.reduce((total, record) => total + record.qualityScore, 0) / records.length)
@@ -46,7 +49,7 @@ export function QcHistoryPage() {
           <div className="grid min-w-[900px] grid-cols-8 gap-3 bg-slate-50 px-4 py-3 text-xs font-black uppercase tracking-wide text-slate-500" role="row">
             <span>ID QC</span><span>Setoran</span><span>Komoditas</span><span>Kadar Air</span><span>Grade</span><span>Kerusakan</span><span>Skor</span><span>Keputusan</span>
           </div>
-          {qcRecords === undefined && koperasiId ? (
+          {qualityChecks === undefined && koperasiId ? (
             <p className="p-4 text-sm font-bold text-emerald-700">Memuat riwayat QC...</p>
           ) : records.length === 0 ? (
             <p className="p-4 text-sm font-bold text-emerald-700">Belum ada pemeriksaan kualitas.</p>
@@ -58,7 +61,10 @@ export function QcHistoryPage() {
                 role="row"
                 key={record.id}
                 type="button"
-                onClick={() => sessionStorage.setItem('agrego_selected_quality_check_id', record.id)}
+                onClick={() => {
+                  sessionStorage.setItem('agrego_selected_quality_check_id', record.id)
+                  navigate(getPagePath('qcResultDetail'))
+                }}
               >
                 <span className="font-mono text-xs font-black text-emerald-700">{record.id}</span>
                 <div><strong>{record.depositNumber ?? '-'}</strong><small>{record.memberName} / {record.inspectorName}</small></div>

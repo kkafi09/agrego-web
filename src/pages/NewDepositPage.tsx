@@ -4,6 +4,17 @@ import { api } from '../../convex/_generated/api'
 import type { Page } from '../config/navigation'
 import PageHeader from '../components/layout/page-header'
 import NumberUnitInput from '../components/forms/number-unit-input'
+import { Button } from '../components/ui/button'
+import { Input } from '../components/ui/input'
+import { Label } from '../components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../components/ui/select'
+import { Textarea } from '../components/ui/textarea'
 import {
   type DepositFormErrors,
   type DepositFormState,
@@ -80,43 +91,47 @@ export function NewDepositPage({ goToPage }: { goToPage: (page: Page) => void })
           ) : null}
 
           <div className="grid gap-2">
-            <label className="text-sm font-bold text-slate-700">Nama Anggota</label>
-            <select
-              className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
-              aria-invalid={Boolean(errors.memberId)}
+            <Label className="text-sm font-bold text-slate-700">Nama Anggota</Label>
+            <Select
               value={form.memberId}
-              onChange={(event) => updateField('memberId', event.target.value)}
+              onValueChange={(value) => updateField('memberId', value)}
             >
-              <option value="">Pilih anggota</option>
-              {members?.map((member) => (
-                <option key={member._id} value={member._id}>{member.name}</option>
-              ))}
-            </select>
+              <SelectTrigger className="h-11 w-full rounded-lg bg-white text-sm font-semibold text-slate-800" aria-invalid={Boolean(errors.memberId)}>
+                <SelectValue placeholder="Pilih anggota" />
+              </SelectTrigger>
+              <SelectContent>
+                {members?.map((member) => (
+                  <SelectItem key={member._id} value={member._id}>{member.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             {errors.memberId ? <small className="text-xs font-semibold text-rose-600">{errors.memberId}</small> : null}
           </div>
 
           <div className="grid gap-2">
-            <label className="text-sm font-bold text-slate-700">Komoditas</label>
-            <select
-              className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
-              aria-invalid={Boolean(errors.commodityId)}
+            <Label className="text-sm font-bold text-slate-700">Komoditas</Label>
+            <Select
               value={form.commodityId}
-              onChange={(event) => updateField('commodityId', event.target.value)}
+              onValueChange={(value) => updateField('commodityId', value)}
             >
-              <option value="">Pilih komoditas</option>
-              {commodities?.map((commodity) => (
-                <option key={commodity._id} value={commodity._id}>{commodity.name}</option>
-              ))}
-            </select>
+              <SelectTrigger className="h-11 w-full rounded-lg bg-white text-sm font-semibold text-slate-800" aria-invalid={Boolean(errors.commodityId)}>
+                <SelectValue placeholder="Pilih komoditas" />
+              </SelectTrigger>
+              <SelectContent>
+                {commodities?.map((commodity) => (
+                  <SelectItem key={commodity._id} value={commodity._id}>{commodity.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             {errors.commodityId ? <small className="text-xs font-semibold text-rose-600">{errors.commodityId}</small> : null}
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 [&_label]:grid [&_label]:gap-2 [&_label>span]:text-sm [&_label>span]:font-bold [&_label>span]:text-slate-700 [&_input]:h-11 [&_input]:rounded-lg [&_input]:border [&_input]:border-slate-200 [&_input]:bg-white [&_input]:px-3 [&_input]:text-sm [&_input]:font-semibold [&_input]:outline-none [&_input:focus]:border-emerald-500 [&_input:focus]:ring-4 [&_input:focus]:ring-emerald-100">
             <NumberUnitInput id="weightKg" label="Berat Setoran" unit="kg" value={form.weightKg} onChange={(val) => updateField('weightKg', val)} error={errors.weightKg} min="1" />
             <div className="grid gap-2">
-              <label className="text-sm font-bold text-slate-700">Tanggal Setor</label>
-              <input
-                className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
+              <Label className="text-sm font-bold text-slate-700">Tanggal Setor</Label>
+              <Input
+                className="h-11 rounded-lg bg-white text-sm font-semibold text-slate-800"
                 aria-invalid={Boolean(errors.submittedAt)}
                 type="date"
                 value={form.submittedAt}
@@ -128,9 +143,9 @@ export function NewDepositPage({ goToPage }: { goToPage: (page: Page) => void })
 
           <div className="grid gap-4 sm:grid-cols-2 [&_label]:grid [&_label]:gap-2 [&_label>span]:text-sm [&_label>span]:font-bold [&_label>span]:text-slate-700 [&_input]:h-11 [&_input]:rounded-lg [&_input]:border [&_input]:border-slate-200 [&_input]:bg-white [&_input]:px-3 [&_input]:text-sm [&_input]:font-semibold [&_input]:outline-none [&_input:focus]:border-emerald-500 [&_input:focus]:ring-4 [&_input:focus]:ring-emerald-100">
             <div className="grid gap-2">
-              <label className="text-sm font-bold text-slate-700">Petugas Penerima</label>
-              <input
-                className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
+              <Label className="text-sm font-bold text-slate-700">Petugas Penerima</Label>
+              <Input
+                className="h-11 rounded-lg bg-white text-sm font-semibold text-slate-800"
                 aria-invalid={Boolean(errors.collector)}
                 value={form.collector}
                 onChange={(event) => updateField('collector', event.target.value)}
@@ -138,9 +153,9 @@ export function NewDepositPage({ goToPage }: { goToPage: (page: Page) => void })
               {errors.collector ? <small className="text-xs font-semibold text-rose-600">{errors.collector}</small> : null}
             </div>
             <div className="grid gap-2">
-              <label className="text-sm font-bold text-slate-700">Asal Dusun</label>
-              <input
-                className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
+              <Label className="text-sm font-bold text-slate-700">Asal Dusun</Label>
+              <Input
+                className="h-11 rounded-lg bg-white text-sm font-semibold text-slate-800"
                 aria-invalid={Boolean(errors.origin)}
                 value={form.origin}
                 onChange={(event) => updateField('origin', event.target.value)}
@@ -150,9 +165,9 @@ export function NewDepositPage({ goToPage }: { goToPage: (page: Page) => void })
           </div>
 
           <div className="grid gap-2">
-            <label className="text-sm font-bold text-slate-700">Catatan Awal</label>
-            <textarea
-              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm font-semibold text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
+            <Label className="text-sm font-bold text-slate-700">Catatan Awal</Label>
+            <Textarea
+              className="min-h-28 rounded-lg bg-white text-sm font-semibold text-slate-800"
               rows={4}
               value={form.notes}
               onChange={(event) => updateField('notes', event.target.value)}
@@ -160,9 +175,9 @@ export function NewDepositPage({ goToPage }: { goToPage: (page: Page) => void })
             />
           </div>
 
-          <button className="w-full rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-black text-white shadow-sm transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50" disabled={!canSubmit} type="submit">
+          <Button className="h-11 w-full rounded-lg bg-emerald-700 text-sm font-black text-white shadow-sm hover:bg-emerald-800" disabled={!canSubmit} type="submit">
             Simpan Setoran
-          </button>
+          </Button>
           {!canSubmit ? <p className="text-xs font-bold text-slate-500">Tambahkan profil koperasi, anggota, dan komoditas sebelum membuat setoran.</p> : null}
         </form>
 

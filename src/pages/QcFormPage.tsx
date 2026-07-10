@@ -1,11 +1,21 @@
 import { useState } from 'react'
 import { useMutation, useQuery } from 'convex/react'
 import { api } from '../../convex/_generated/api'
+import { Button } from '../components/ui/button'
+import { Input } from '../components/ui/input'
+import { Label } from '../components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../components/ui/select'
+import { Textarea } from '../components/ui/textarea'
 import {
   type QcFormState,
   calculateQualityScore,
   gradeOptions,
-  mapQualityDecision,
 } from './shared'
 
 export function QcFormPage() {
@@ -68,33 +78,60 @@ export function QcFormPage() {
             <h2>Parameter pemeriksaan</h2>
           </div>
 
-          <label>
-            <span>ID Setoran</span>
-            <select value={form.depositId} onChange={(event) => updateField('depositId', event.target.value)}>
-              <option value="">Pilih setoran</option>
-              {deposits?.map((deposit) => (
-                <option key={deposit.id} value={deposit.id}>{deposit.depositNumber} / {deposit.memberName}</option>
-              ))}
-            </select>
-          </label>
-
-          <div className="grid gap-4 sm:grid-cols-2 [&_label]:grid [&_label]:gap-2 [&_label>span]:text-sm [&_label>span]:font-bold [&_label>span]:text-slate-700 [&_input]:h-11 [&_input]:rounded-lg [&_input]:border [&_input]:border-slate-200 [&_input]:bg-white [&_input]:px-3 [&_input]:text-sm [&_input]:font-semibold [&_input]:outline-none [&_input:focus]:border-emerald-500 [&_input:focus]:ring-4 [&_input:focus]:ring-emerald-100 [&_select]:h-11 [&_select]:rounded-lg [&_select]:border [&_select]:border-slate-200 [&_select]:bg-white [&_select]:px-3 [&_select]:text-sm [&_select]:font-semibold [&_select]:outline-none [&_select:focus]:border-emerald-500 [&_select:focus]:ring-4 [&_select:focus]:ring-emerald-100">
-            <label><span>Kadar Air (%)</span><input min="0" step="0.1" type="number" value={form.moisturePercent} onChange={(event) => updateField('moisturePercent', event.target.value)} /></label>
-            <label><span>Grade Ukuran</span><select value={form.sizeGrade} onChange={(event) => updateField('sizeGrade', event.target.value)}>{gradeOptions.map((grade) => (<option key={grade}>{grade}</option>))}</select></label>
+          <div className="grid gap-2">
+            <Label>ID Setoran</Label>
+            <Select value={form.depositId} onValueChange={(value) => updateField('depositId', value)}>
+              <SelectTrigger className="h-11 w-full rounded-lg bg-white text-sm font-semibold text-slate-800">
+                <SelectValue placeholder="Pilih setoran" />
+              </SelectTrigger>
+              <SelectContent>
+                {deposits?.map((deposit) => (
+                  <SelectItem key={deposit.id} value={deposit.id}>
+                    {deposit.depositNumber} / {deposit.memberName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 [&_label]:grid [&_label]:gap-2 [&_label>span]:text-sm [&_label>span]:font-bold [&_label>span]:text-slate-700 [&_input]:h-11 [&_input]:rounded-lg [&_input]:border [&_input]:border-slate-200 [&_input]:bg-white [&_input]:px-3 [&_input]:text-sm [&_input]:font-semibold [&_input]:outline-none [&_input:focus]:border-emerald-500 [&_input:focus]:ring-4 [&_input:focus]:ring-emerald-100">
-            <label><span>Kerusakan (%)</span><input min="0" step="0.1" type="number" value={form.defectPercent} onChange={(event) => updateField('defectPercent', event.target.value)} /></label>
-            <label><span>Petugas QC</span><input value={form.inspector} onChange={(event) => updateField('inspector', event.target.value)} /></label>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="grid gap-2">
+              <Label>Kadar Air (%)</Label>
+              <Input className="h-11 rounded-lg bg-white text-sm font-semibold text-slate-800" min="0" step="0.1" type="number" value={form.moisturePercent} onChange={(event) => updateField('moisturePercent', event.target.value)} />
+            </label>
+            <label className="grid gap-2">
+              <Label>Grade Ukuran</Label>
+              <Select value={form.sizeGrade} onValueChange={(value) => updateField('sizeGrade', value)}>
+                <SelectTrigger className="h-11 w-full rounded-lg bg-white text-sm font-semibold text-slate-800">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {gradeOptions.map((grade) => (
+                    <SelectItem key={grade} value={grade}>{grade}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </label>
           </div>
 
-          <label>
-            <span>Catatan Pemeriksaan</span>
-            <textarea rows={4} value={form.notes} onChange={(event) => updateField('notes', event.target.value)} placeholder="Catatan pemeriksaan" />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label className="grid gap-2">
+              <Label>Kerusakan (%)</Label>
+              <Input className="h-11 rounded-lg bg-white text-sm font-semibold text-slate-800" min="0" step="0.1" type="number" value={form.defectPercent} onChange={(event) => updateField('defectPercent', event.target.value)} />
+            </label>
+            <label className="grid gap-2">
+              <Label>Petugas QC</Label>
+              <Input className="h-11 rounded-lg bg-white text-sm font-semibold text-slate-800" value={form.inspector} onChange={(event) => updateField('inspector', event.target.value)} />
+            </label>
+          </div>
+
+          <label className="grid gap-2">
+            <Label>Catatan Pemeriksaan</Label>
+            <Textarea className="min-h-28 rounded-lg bg-white text-sm font-semibold text-slate-800" value={form.notes} onChange={(event) => updateField('notes', event.target.value)} placeholder="Catatan pemeriksaan" />
           </label>
-          <button className="inline-flex items-center justify-center rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-black text-white shadow-sm transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50" disabled={!canSubmit} type="submit">
+          <Button className="h-11 rounded-lg bg-emerald-700 text-sm font-black text-white shadow-sm hover:bg-emerald-800" disabled={!canSubmit} type="submit">
             Simpan QC
-          </button>
+          </Button>
           {deposits?.length === 0 ? <p className="text-sm font-bold text-emerald-700">Belum ada setoran tercatat yang menunggu QC.</p> : null}
           {saved ? <p className="text-sm font-bold text-emerald-700">Hasil QC tersimpan.</p> : null}
         </form>

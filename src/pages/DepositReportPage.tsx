@@ -1,6 +1,14 @@
 import { useState } from 'react'
 import { useQuery } from 'convex/react'
 import { api } from '../../convex/_generated/api'
+import { Button } from '../components/ui/button'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../components/ui/select'
 import {
   type DepositStatus,
   downloadCsv,
@@ -75,8 +83,8 @@ export function DepositReportPage() {
             <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-700">Filter Laporan</p>
             <h2>Ringkasan setoran per periode</h2>
           </div>
-          <button
-            className="inline-flex items-center justify-center rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-black text-white shadow-sm transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
+          <Button
+            className="h-11 rounded-lg bg-emerald-700 text-sm font-black text-white hover:bg-emerald-800"
             disabled={filteredRecords.length === 0}
             type="button"
             onClick={() =>
@@ -95,17 +103,22 @@ export function DepositReportPage() {
             }
           >
             Unduh CSV
-          </button>
+          </Button>
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 [&_label]:grid [&_label]:gap-2 [&_label>span]:text-sm [&_label>span]:font-bold [&_label>span]:text-slate-700 [&_input]:h-11 [&_input]:rounded-lg [&_input]:border [&_input]:border-slate-200 [&_input]:bg-white [&_input]:px-3 [&_input]:text-sm [&_input]:font-semibold [&_input]:outline-none [&_input:focus]:border-emerald-500 [&_input:focus]:ring-4 [&_input:focus]:ring-emerald-100 [&_select]:h-11 [&_select]:rounded-lg [&_select]:border [&_select]:border-slate-200 [&_select]:bg-white [&_select]:px-3 [&_select]:text-sm [&_select]:font-semibold [&_select]:outline-none [&_select:focus]:border-emerald-500 [&_select:focus]:ring-4 [&_select:focus]:ring-emerald-100">
           <label>
             <span>Komoditas</span>
-            <select value={commodityFilter} onChange={(event) => setCommodityFilter(event.target.value)}>
-              <option>Semua</option>
-              {commodities?.map((commodity) => (
-                <option key={commodity._id}>{commodity.name}</option>
-              ))}
-            </select>
+            <Select value={commodityFilter} onValueChange={setCommodityFilter}>
+              <SelectTrigger className="h-11 w-full rounded-lg bg-white text-sm font-semibold text-slate-800">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Semua">Semua</SelectItem>
+                {commodities?.map((commodity) => (
+                  <SelectItem key={commodity._id} value={commodity.name}>{commodity.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </label>
         </div>
         <div className="deposit-table">

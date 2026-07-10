@@ -1,6 +1,16 @@
 import { useState } from 'react'
 import { useQuery, useMutation } from 'convex/react'
 import { api } from '../../convex/_generated/api'
+import { Button } from '../components/ui/button'
+import { Input } from '../components/ui/input'
+import { Label } from '../components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../components/ui/select'
 
 type MemberFormState = {
   _id?: string
@@ -61,8 +71,9 @@ export function MembersPage() {
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 [&_label]:grid [&_label]:gap-2 [&_label>span]:text-sm [&_label>span]:font-bold [&_label>span]:text-slate-700 [&_input]:h-11 [&_input]:rounded-lg [&_input]:border [&_input]:border-slate-200 [&_input]:bg-white [&_input]:px-3 [&_input]:text-sm [&_input]:font-semibold [&_input]:outline-none [&_input:focus]:border-emerald-500 [&_input:focus]:ring-4 [&_input:focus]:ring-emerald-100 [&_select]:h-11 [&_select]:rounded-lg [&_select]:border [&_select]:border-slate-200 [&_select]:bg-white [&_select]:px-3 [&_select]:text-sm [&_select]:font-semibold [&_select]:outline-none [&_select:focus]:border-emerald-500 [&_select:focus]:ring-4 [&_select:focus]:ring-emerald-100">
           <label>
-            <span>Cari Nama</span>
-            <input
+            <Label>Cari Nama</Label>
+            <Input
+              className="h-11 rounded-lg bg-white text-sm font-semibold text-slate-800"
               value={searchTerm}
               onChange={(event) => setSearchTerm(event.target.value)}
               placeholder="Cari anggota"
@@ -174,16 +185,18 @@ export function MembersPage() {
         >
           <div className="grid gap-4 sm:grid-cols-2 [&_label]:grid [&_label]:gap-2 [&_label>span]:text-sm [&_label>span]:font-bold [&_label>span]:text-slate-700 [&_input]:h-11 [&_input]:rounded-lg [&_input]:border [&_input]:border-slate-200 [&_input]:bg-white [&_input]:px-3 [&_input]:text-sm [&_input]:font-semibold [&_input]:outline-none [&_input:focus]:border-emerald-500 [&_input:focus]:ring-4 [&_input:focus]:ring-emerald-100 [&_select]:h-11 [&_select]:rounded-lg [&_select]:border [&_select]:border-slate-200 [&_select]:bg-white [&_select]:px-3 [&_select]:text-sm [&_select]:font-semibold [&_select]:outline-none [&_select:focus]:border-emerald-500 [&_select:focus]:ring-4 [&_select:focus]:ring-emerald-100">
             <label>
-              <span>Nama</span>
-              <input
+              <Label>Nama</Label>
+              <Input
+                className="h-11 rounded-lg bg-white text-sm font-semibold text-slate-800"
                 value={form.name}
                 onChange={(event) => updateField('name', event.target.value)}
                 required
               />
             </label>
             <label>
-              <span>Telepon</span>
-              <input
+              <Label>Telepon</Label>
+              <Input
+                className="h-11 rounded-lg bg-white text-sm font-semibold text-slate-800"
                 value={form.phone}
                 onChange={(event) => updateField('phone', event.target.value)}
                 required
@@ -192,34 +205,40 @@ export function MembersPage() {
           </div>
           <div className="grid gap-4 sm:grid-cols-2 [&_label]:grid [&_label]:gap-2 [&_label>span]:text-sm [&_label>span]:font-bold [&_label>span]:text-slate-700 [&_input]:h-11 [&_input]:rounded-lg [&_input]:border [&_input]:border-slate-200 [&_input]:bg-white [&_input]:px-3 [&_input]:text-sm [&_input]:font-semibold [&_input]:outline-none [&_input:focus]:border-emerald-500 [&_input:focus]:ring-4 [&_input:focus]:ring-emerald-100 [&_select]:h-11 [&_select]:rounded-lg [&_select]:border [&_select]:border-slate-200 [&_select]:bg-white [&_select]:px-3 [&_select]:text-sm [&_select]:font-semibold [&_select]:outline-none [&_select:focus]:border-emerald-500 [&_select:focus]:ring-4 [&_select:focus]:ring-emerald-100">
             <label>
-              <span>Dusun</span>
-              <input
+              <Label>Dusun</Label>
+              <Input
+                className="h-11 rounded-lg bg-white text-sm font-semibold text-slate-800"
                 value={form.village}
                 onChange={(event) => updateField('village', event.target.value)}
               />
             </label>
             <label>
-              <span>Komoditas</span>
-              <select
+              <Label>Komoditas</Label>
+              <Select
                 value={form.primaryCommodityId}
-                onChange={(event) => updateField('primaryCommodityId', event.target.value)}
+                onValueChange={(value) => updateField('primaryCommodityId', value)}
               >
-                <option value="">Pilih Komoditas</option>
-                {commodities?.map((commodity) => (
-                  <option key={commodity._id} value={commodity._id}>
-                    {commodity.name}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="h-11 w-full rounded-lg bg-white text-sm font-semibold text-slate-800">
+                  <SelectValue placeholder="Pilih komoditas" />
+                </SelectTrigger>
+                <SelectContent>
+                  {commodities?.map((commodity) => (
+                    <SelectItem key={commodity._id} value={commodity._id}>
+                      {commodity.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </label>
           </div>
           <div className="mt-4 flex flex-wrap gap-3">
-            <button className="inline-flex items-center justify-center rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-black text-white shadow-sm transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50" type="submit">
+            <Button className="h-11 rounded-lg bg-emerald-700 text-sm font-black text-white hover:bg-emerald-800" type="submit">
               {form._id ? 'Simpan Perubahan' : 'Tambah Anggota'}
-            </button>
+            </Button>
             {form._id || form.name || form.phone || form.village || form.primaryCommodityId ? (
-              <button
-                className="text-sm font-black text-emerald-700 transition hover:text-emerald-800"
+              <Button
+                variant="ghost"
+                className="text-sm font-black text-emerald-700 hover:text-emerald-800"
                 type="button"
                 onClick={() => {
                   setForm({ name: '', phone: '', village: '', primaryCommodityId: '' })
@@ -227,7 +246,7 @@ export function MembersPage() {
                 }}
               >
                 Batal
-              </button>
+              </Button>
             ) : null}
           </div>
           {saved ? <p className="text-sm font-bold text-emerald-700">Data anggota berhasil disimpan.</p> : null}

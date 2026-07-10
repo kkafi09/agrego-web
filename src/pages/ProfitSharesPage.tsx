@@ -1,16 +1,33 @@
-import { useState } from 'react'
-import {
-  profitShares,
-  formatKg,
-  downloadCsv,
-} from './shared'
+import { useEffect, useMemo, useState } from 'react'
+import { useQuery } from 'convex/react'
+import { api } from '../../convex/_generated/api'
 import { cn } from '../lib/utils'
+import { downloadCsv, formatDate, formatKg } from './shared'
+
+type ProfitShareRow = {
+  shareId: string
+  contractNumber: string | null
+  memberName: string
+  contributedWeightKg: number
+  qualityScore: number
+  amountEarned: number
+  calculatedAt: number
+}
 
 export function ProfitSharesPage() {
-  const [selectedMember, setSelectedMember] = useState(profitShares[0].member)
-  const selectedRows = profitShares.filter((row) => row.member === selectedMember)
-  const totalAmount = profitShares.reduce((total, row) => total + row.amount, 0)
-  const selectedAmount = selectedRows.reduce((total, row) => total + row.amount, 0)
+  const rows = useQuery(api.reports.profitShareHistory, {}) as ProfitShareRow[] | undefined
+  const profitRows = useMemo(() => rows ?? [], [rows])
+  const [selectedMember, setSelectedMember] = useState('')
+
+  useEffect(() => {
+    if (!selectedMember && profitRows[0]) {
+      setSelectedMember(profitRows[0].memberName)
+    }
+  }, [profitRows, selectedMember])
+
+  const selectedRows = profitRows.filter((row) => row.memberName === selectedMember)
+  const totalAmount = profitRows.reduce((total, row) => total + row.amountEarned, 0)
+  const selectedAmount = selectedRows.reduce((total, row) => total + row.amountEarned, 0)
 
   return (
     <>
@@ -34,26 +51,18 @@ export function ProfitSharesPage() {
             </div>
             <button
               className="inline-flex items-center justify-center rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-black text-white shadow-sm transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={profitRows.length === 0}
               type="button"
               onClick={() =>
                 downloadCsv('laporan-bagi-hasil.csv', [
-                  [
-                    'Anggota',
-                    'Kontrak',
-                    'Komoditas',
-                    'Kontribusi Kg',
-                    'Quality Score',
-                    'Nominal',
-                    'Tanggal',
-                  ],
-                  ...profitShares.map((row) => [
-                    row.member,
-                    row.contractId,
-                    row.commodity,
-                    String(row.contributedKg),
+                  ['Anggota', 'Kontrak', 'Kontribusi Kg', 'Quality Score', 'Nominal', 'Tanggal'],
+                  ...profitRows.map((row) => [
+                    row.memberName,
+                    row.contractNumber ?? '',
+                    String(row.contributedWeightKg),
                     String(row.qualityScore),
-                    String(row.amount),
-                    row.calculatedAt,
+                    String(row.amountEarned),
+                    formatDate(row.calculatedAt),
                   ]),
                 ])
               }
@@ -62,28 +71,32 @@ export function ProfitSharesPage() {
             </button>
           </div>
           <div className="grid gap-3">
-            {profitShares.map((row) => (
+            {rows === undefined ? (
+              <p className="text-sm font-bold text-emerald-700">Memuat riwayat bagi hasil...</p>
+            ) : profitRows.length === 0 ? (
+              <p className="text-sm font-bold text-emerald-700">Belum ada pembagian hasil. Jalankan perhitungan dari kontrak yang sudah dialokasikan.</p>
+            ) : profitRows.map((row) => (
               <button
                 className={cn(
                   'grid gap-3 rounded-xl border p-4 text-left transition hover:border-emerald-300 hover:bg-emerald-50/50 sm:grid-cols-[1fr_1fr_auto_auto] sm:items-center',
-                  selectedMember === row.member
+                  selectedMember === row.memberName
                     ? 'border-emerald-500 bg-emerald-50 shadow-sm'
                     : 'border-slate-200 bg-white',
                 )}
-                key={`${row.member}-${row.contractId}`}
+                key={row.shareId}
                 type="button"
-                onClick={() => setSelectedMember(row.member)}
+                onClick={() => setSelectedMember(row.memberName)}
               >
                 <div>
-                  <strong>{row.member}</strong>
-                  <span>{row.contractId}</span>
+                  <strong>{row.memberName}</strong>
+                  <span>{row.contractNumber ?? '-'}</span>
                 </div>
                 <div>
-                  <span>{row.commodity}</span>
-                  <b>Rp{row.amount.toLocaleString('id-ID')}</b>
+                  <span>{formatDate(row.calculatedAt)}</span>
+                  <b>Rp{row.amountEarned.toLocaleString('id-ID')}</b>
                 </div>
                 <span className="inline-flex w-fit items-center rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-black text-emerald-700">QS {row.qualityScore}</span>
-                <small>{formatKg(row.contributedKg)}</small>
+                <small>{formatKg(row.contributedWeightKg)}</small>
               </button>
             ))}
           </div>
@@ -92,7 +105,7 @@ export function ProfitSharesPage() {
         <aside className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <div className="grid gap-1 [&_h2]:text-lg [&_h2]:font-black [&_h2]:text-slate-950">
             <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-700">Detail Anggota</p>
-            <h2>{selectedMember}</h2>
+            <h2>{selectedMember || '-'}</h2>
           </div>
           <div className="mt-4 grid gap-3">
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
@@ -103,9 +116,7 @@ export function ProfitSharesPage() {
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
               <span className="text-xs font-semibold text-slate-500">Kontribusi</span>
               <strong className="mt-1 block text-xl font-black text-slate-950">
-                {formatKg(
-                  selectedRows.reduce((total, row) => total + row.contributedKg, 0),
-                )}
+                {formatKg(selectedRows.reduce((total, row) => total + row.contributedWeightKg, 0))}
               </strong>
               <small className="mt-1 block text-xs font-semibold text-slate-500">Berbasis volume dan quality score</small>
             </div>
