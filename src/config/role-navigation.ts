@@ -3,7 +3,7 @@ import type { Page } from './navigation'
 export type Role = 'Admin' | 'Koperasi' | 'Buyer'
 
 // Allowed page IDs for each role
-export const rolePermissions: Record<Role, (Page | 'logout')[]> = {
+export const rolePermissions: Record<Role, Page[]> = {
   Koperasi: [
     'dashboard',
     'newDeposit',
@@ -22,8 +22,7 @@ export const rolePermissions: Record<Role, (Page | 'logout')[]> = {
     'profile',
     'members',
     'commodities',
-    'cooperativeProfile',
-    'logout'
+    'cooperativeProfile'
   ],
   Buyer: [
     'dashboard',
@@ -31,8 +30,7 @@ export const rolePermissions: Record<Role, (Page | 'logout')[]> = {
     'newContract',
     'contractDetail',
     'allocationStatus',
-    'profile',
-    'logout'
+    'profile'
   ],
   Admin: [
     'dashboard',
@@ -41,13 +39,12 @@ export const rolePermissions: Record<Role, (Page | 'logout')[]> = {
     'contracts',
     'contractDetail',
     'allocationStatus',
-    'profile',
-    'logout'
+    'profile'
   ]
 }
 
 // Function to check if page is accessible by a role
-export function isPageAllowed(role: Role | null, page: Page | 'logout'): boolean {
+export function isPageAllowed(role: Role | null, page: Page): boolean {
   if (!role) {
     // If not logged in, only auth pages are allowed
     return ['login', 'register', 'resetPassword'].includes(page)

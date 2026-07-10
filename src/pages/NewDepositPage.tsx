@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { useMutation, useQuery } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import type { Page } from '../config/navigation'
+import { rolePermissions } from '../config/role-navigation'
+import type { AuthUser } from '../lib/auth'
 import PageHeader from '../components/layout/page-header'
 import NumberUnitInput from '../components/forms/number-unit-input'
 import { Button } from '../components/ui/button'
@@ -21,7 +23,7 @@ import {
   validateDepositForm,
 } from './shared'
 
-export function NewDepositPage({ goToPage }: { goToPage: (page: Page) => void }) {
+export function NewDepositPage({ goToPage, user }: { goToPage: (page: Page) => void; user: AuthUser | null }) {
   const defaultKoperasi = useQuery(api.koperasi.getDefaultKoperasi)
   const koperasiId = defaultKoperasi?._id
   const members = useQuery(api.masterData.searchMembers, koperasiId ? { koperasiId, searchTerm: '' } : 'skip')
@@ -39,6 +41,8 @@ export function NewDepositPage({ goToPage }: { goToPage: (page: Page) => void })
   const [saved, setSaved] = useState(false)
   const [errors, setErrors] = useState<DepositFormErrors>({})
   const canSubmit = Boolean(koperasiId && members?.length && commodities?.length)
+  const canManageMembers = user ? rolePermissions[user.role].includes('members') : false
+  const canManageCommodities = user ? rolePermissions[user.role].includes('commodities') : false
 
   function updateField(field: keyof DepositFormState, value: string) {
     setSaved(false)
@@ -95,16 +99,23 @@ export function NewDepositPage({ goToPage }: { goToPage: (page: Page) => void })
             <Select
               value={form.memberId}
               onValueChange={(value) => updateField('memberId', value)}
+              disabled={!members?.length}
             >
-              <SelectTrigger className="h-11 w-full rounded-lg bg-white text-sm font-semibold text-slate-800" aria-invalid={Boolean(errors.memberId)}>
-                <SelectValue placeholder="Pilih anggota" />
+              <SelectTrigger className="w-full" aria-invalid={Boolean(errors.memberId)}>
+                <SelectValue placeholder={members?.length ? 'Pilih anggota' : 'Belum ada anggota'} />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent position="popper">
                 {members?.map((member) => (
                   <SelectItem key={member._id} value={member._id}>{member.name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
+            {!members?.length ? (
+              <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-500">
+                <span>Tambahkan anggota terlebih dahulu.</span>
+                {canManageMembers ? <Button type="button" variant="link" className="h-auto px-0 py-0 text-xs font-black text-emerald-700" onClick={() => goToPage('members')}>Tambah anggota</Button> : null}
+              </div>
+            ) : null}
             {errors.memberId ? <small className="text-xs font-semibold text-rose-600">{errors.memberId}</small> : null}
           </div>
 
@@ -113,20 +124,27 @@ export function NewDepositPage({ goToPage }: { goToPage: (page: Page) => void })
             <Select
               value={form.commodityId}
               onValueChange={(value) => updateField('commodityId', value)}
+              disabled={!commodities?.length}
             >
-              <SelectTrigger className="h-11 w-full rounded-lg bg-white text-sm font-semibold text-slate-800" aria-invalid={Boolean(errors.commodityId)}>
-                <SelectValue placeholder="Pilih komoditas" />
+              <SelectTrigger className="w-full" aria-invalid={Boolean(errors.commodityId)}>
+                <SelectValue placeholder={commodities?.length ? 'Pilih komoditas' : 'Belum ada komoditas'} />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent position="popper">
                 {commodities?.map((commodity) => (
                   <SelectItem key={commodity._id} value={commodity._id}>{commodity.name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
+            {!commodities?.length ? (
+              <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-500">
+                <span>Tambahkan komoditas terlebih dahulu.</span>
+                {canManageCommodities ? <Button type="button" variant="link" className="h-auto px-0 py-0 text-xs font-black text-emerald-700" onClick={() => goToPage('commodities')}>Tambah komoditas</Button> : null}
+              </div>
+            ) : null}
             {errors.commodityId ? <small className="text-xs font-semibold text-rose-600">{errors.commodityId}</small> : null}
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 [&_label]:grid [&_label]:gap-2 [&_label>span]:text-sm [&_label>span]:font-bold [&_label>span]:text-slate-700 [&_input]:h-11 [&_input]:rounded-lg [&_input]:border [&_input]:border-slate-200 [&_input]:bg-white [&_input]:px-3 [&_input]:text-sm [&_input]:font-semibold [&_input]:outline-none [&_input:focus]:border-emerald-500 [&_input:focus]:ring-4 [&_input:focus]:ring-emerald-100">
+          <div className="grid gap-4 sm:grid-cols-2-slate-200">
             <NumberUnitInput id="weightKg" label="Berat Setoran" unit="kg" value={form.weightKg} onChange={(val) => updateField('weightKg', val)} error={errors.weightKg} min="1" />
             <div className="grid gap-2">
               <Label className="text-sm font-bold text-slate-700">Tanggal Setor</Label>
@@ -141,7 +159,7 @@ export function NewDepositPage({ goToPage }: { goToPage: (page: Page) => void })
             </div>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 [&_label]:grid [&_label]:gap-2 [&_label>span]:text-sm [&_label>span]:font-bold [&_label>span]:text-slate-700 [&_input]:h-11 [&_input]:rounded-lg [&_input]:border [&_input]:border-slate-200 [&_input]:bg-white [&_input]:px-3 [&_input]:text-sm [&_input]:font-semibold [&_input]:outline-none [&_input:focus]:border-emerald-500 [&_input:focus]:ring-4 [&_input:focus]:ring-emerald-100">
+          <div className="grid gap-4 sm:grid-cols-2-slate-200">
             <div className="grid gap-2">
               <Label className="text-sm font-bold text-slate-700">Petugas Penerima</Label>
               <Input

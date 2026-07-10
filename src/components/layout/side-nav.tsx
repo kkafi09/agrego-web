@@ -93,13 +93,7 @@ export default function AppSidebar({
                         : 'text-white/70 hover:bg-white/10 hover:text-white',
                     )}
                     type="button"
-                    onClick={() => {
-                      if (item.id === 'logout') {
-                        onLogout()
-                      } else {
-                        onPageChange(item.id)
-                      }
-                    }}
+                    onClick={() => onPageChange(item.id)}
                     title={isCollapsed ? item.label : undefined}
                   >
                     <Icon className="shrink-0" size={18} />

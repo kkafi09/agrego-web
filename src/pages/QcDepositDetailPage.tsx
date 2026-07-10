@@ -37,7 +37,7 @@ export function QcDepositDetailPage() {
             <SelectTrigger className="h-11 w-full rounded-lg bg-white text-sm font-semibold text-slate-800">
               <SelectValue placeholder="Pilih setoran" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent position="popper">
               {deposits?.map((item) => (
                 <SelectItem key={item.id} value={item.id}>{item.depositNumber} / {item.memberName}</SelectItem>
               ))}

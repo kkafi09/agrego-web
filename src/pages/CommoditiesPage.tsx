@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation } from 'convex/react'
+import toast from 'react-hot-toast'
 import { api } from '../../convex/_generated/api'
 import { Button } from '../components/ui/button'
 import {
@@ -32,6 +33,7 @@ export function CommoditiesPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [saved, setSaved] = useState(false)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
   const [form, setForm] = useState<CommodityFormState>(emptyCommodityForm)
 
   const commodityList = useQuery(api.masterData.searchCommodities, { searchTerm })
@@ -80,72 +82,81 @@ export function CommoditiesPage() {
         </div>
       </section>
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        {commodityList === undefined ? (
-          <p className="text-sm font-bold text-emerald-700">Memuat data komoditas...</p>
-        ) : commodityList.length === 0 ? (
-          <p className="text-sm font-bold text-emerald-700">Belum ada komoditas terdaftar.</p>
-        ) : (
-          commodityList.map((commodity) => (
-            <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm" key={commodity._id}>
-              <div className="grid gap-1">
-                <span className="font-mono text-xs font-black text-emerald-700">{commodity._id}</span>
-                <strong className="text-base font-black text-slate-950">{commodity.name}</strong>
-              </div>
-              <dl className="mt-4 grid gap-3">
-                <div>
-                  <dt className="text-xs font-semibold text-slate-500">Unit</dt>
-                  <dd className="mt-1 text-sm font-black text-slate-950">{commodity.unit}</dd>
-                </div>
-                <div>
-                  <dt className="text-xs font-semibold text-slate-500">Minimum QS</dt>
-                  <dd className="mt-1 text-sm font-black text-slate-950">{commodity.minimumQualityScore}</dd>
-                </div>
-                <div>
-                  <dt className="text-xs font-semibold text-slate-500">Parameter</dt>
-                  <dd className="mt-1 text-sm font-black text-slate-950">{commodity.qualityParameters.join(', ') || '-'}</dd>
-                </div>
-              </dl>
-              <div className="mt-4 flex flex-wrap gap-2">
-                <Button
-                  variant="outline"
-                  type="button"
-                  onClick={() => {
-                    setForm({
-                      _id: commodity._id,
-                      name: commodity.name,
-                      unit: commodity.unit,
-                      minimumQualityScore: String(commodity.minimumQualityScore),
-                      qualityParameters: commodity.qualityParameters.join(', '),
-                    })
-                    setSaved(false)
-                    setIsDialogOpen(true)
-                  }}
-                >
-                  Ubah
-                </Button>
-                <Button
-                  variant="destructive"
-                  type="button"
-                  onClick={async () => {
-                    if (window.confirm(`Hapus ${commodity.name}?`)) {
-                      try {
-                        await deleteCommodity({ commodityId: commodity._id })
-                        if (form._id === commodity._id) {
-                          setForm(emptyCommodityForm)
-                        }
-                      } catch (err) {
-                        alert('Gagal menghapus komoditas: ' + (err as Error).message)
-                      }
-                    }
-                  }}
-                >
-                  Hapus
-                </Button>
-              </div>
-            </article>
-          ))
-        )}
+      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div className="overflow-x-auto">
+          <table className="min-w-full border-collapse text-left text-sm">
+            <thead className="bg-slate-50 text-xs font-black uppercase tracking-wide text-slate-500">
+              <tr>
+                <th className="px-4 py-3">ID</th>
+                <th className="px-4 py-3">Komoditas</th>
+                <th className="px-4 py-3">Unit</th>
+                <th className="px-4 py-3">Minimum QS</th>
+                <th className="px-4 py-3">Parameter</th>
+                <th className="px-4 py-3 text-right">Aksi</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {commodityList === undefined ? (
+                <tr><td colSpan={6} className="px-4 py-10 text-center text-sm font-semibold text-slate-500">Memuat data komoditas...</td></tr>
+              ) : commodityList.length === 0 ? (
+                <tr><td colSpan={6} className="px-4 py-10 text-center text-sm font-semibold text-slate-500">Belum ada komoditas terdaftar.</td></tr>
+              ) : (
+                commodityList.map((commodity) => (
+                  <tr className="transition hover:bg-emerald-50/50" key={commodity._id}>
+                    <td className="px-4 py-3 font-mono text-xs font-black text-emerald-700">{commodity._id}</td>
+                    <td className="px-4 py-3 font-black text-slate-950">{commodity.name}</td>
+                    <td className="px-4 py-3 font-semibold text-slate-700">{commodity.unit}</td>
+                    <td className="px-4 py-3 font-semibold text-slate-700">{commodity.minimumQualityScore}</td>
+                    <td className="px-4 py-3 font-semibold text-slate-700">{commodity.qualityParameters.join(', ') || '-'}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          type="button"
+                          onClick={() => {
+                            setForm({
+                              _id: commodity._id,
+                              name: commodity.name,
+                              unit: commodity.unit,
+                              minimumQualityScore: String(commodity.minimumQualityScore),
+                              qualityParameters: commodity.qualityParameters.join(', '),
+                            })
+                            setSaved(false)
+                            setIsDialogOpen(true)
+                          }}
+                        >
+                          Ubah
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          type="button"
+                          className="text-rose-700 hover:bg-rose-50 hover:text-rose-800"
+                          onClick={async () => {
+                            if (window.confirm(`Hapus ${commodity.name}?`)) {
+                              try {
+                                await deleteCommodity({ commodityId: commodity._id })
+                                if (form._id === commodity._id) {
+                                  setForm(emptyCommodityForm)
+                                }
+                                toast.success('Komoditas berhasil dihapus.')
+                              } catch (err) {
+                                toast.error((err as Error).message || 'Gagal menghapus komoditas.')
+                              }
+                            }
+                          }}
+                        >
+                          Hapus
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </section>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -163,6 +174,7 @@ export function CommoditiesPage() {
                 .map((p) => p.trim())
                 .filter(Boolean)
 
+              setIsSaving(true)
               try {
                 if (form._id) {
                   await updateCommodity({
@@ -183,8 +195,11 @@ export function CommoditiesPage() {
                 setSaved(true)
                 setForm(emptyCommodityForm)
                 setIsDialogOpen(false)
+                toast.success('Data komoditas berhasil disimpan.')
               } catch (err) {
-                alert('Gagal menyimpan data: ' + (err as Error).message)
+                toast.error((err as Error).message || 'Gagal menyimpan data komoditas.')
+              } finally {
+                setIsSaving(false)
               }
             }}
           >
@@ -212,8 +227,8 @@ export function CommoditiesPage() {
               <Button variant="outline" type="button" onClick={() => setIsDialogOpen(false)}>
                 Batal
               </Button>
-              <Button className="bg-emerald-700 text-white hover:bg-emerald-800" type="submit">
-                {form._id ? 'Simpan Perubahan' : 'Tambah Komoditas'}
+              <Button className="bg-emerald-700 text-white hover:bg-emerald-800" type="submit" disabled={isSaving}>
+                {isSaving ? 'Menyimpan...' : form._id ? 'Simpan Perubahan' : 'Tambah Komoditas'}
               </Button>
             </DialogFooter>
           </form>

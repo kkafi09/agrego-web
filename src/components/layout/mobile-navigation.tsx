@@ -173,11 +173,7 @@ export default function MobileNavigation({
                           type="button"
                           onClick={() => {
                             setIsOpen(false)
-                            if (item.id === 'logout') {
-                              onLogout()
-                            } else {
-                              onPageChange(item.id)
-                            }
+                            onPageChange(item.id)
                           }}
                         >
                           <Icon size={18} className="shrink-0" />

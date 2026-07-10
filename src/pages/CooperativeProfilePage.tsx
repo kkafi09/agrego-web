@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation } from 'convex/react'
+import toast from 'react-hot-toast'
 import { api } from '../../convex/_generated/api'
 import type { AuthUser } from '../lib/auth'
 import { Button } from '../components/ui/button'
@@ -8,6 +9,7 @@ import { Label } from '../components/ui/label'
 
 export function CooperativeProfilePage({ user }: { user: AuthUser | null }) {
   const [isEditing, setIsEditing] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
   const defaultKoperasi = useQuery(api.koperasi.getDefaultKoperasi)
   const saveDefaultKoperasi = useMutation(api.koperasi.saveDefaultKoperasi)
 
@@ -63,11 +65,12 @@ export function CooperativeProfilePage({ user }: { user: AuthUser | null }) {
               className="mt-4 grid gap-4"
               onSubmit={async (event) => {
                 event.preventDefault()
+                if (!user?.id) {
+                  toast.error('User login tidak valid.')
+                  return
+                }
+                setIsSaving(true)
                 try {
-                  if (!user?.id) {
-                    alert('User login tidak valid.')
-                    return
-                  }
                   await saveDefaultKoperasi({
                     adminId: user.id as any,
                     name: form.name,
@@ -78,8 +81,11 @@ export function CooperativeProfilePage({ user }: { user: AuthUser | null }) {
                     leaderName: form.leaderName || undefined,
                   })
                   setIsEditing(false)
+                  toast.success('Profil koperasi berhasil diperbarui.')
                 } catch (err) {
-                  alert('Gagal menyimpan profil: ' + (err as Error).message)
+                  toast.error((err as Error).message || 'Gagal menyimpan profil koperasi.')
+                } finally {
+                  setIsSaving(false)
                 }
               }}
             >
@@ -152,8 +158,8 @@ export function CooperativeProfilePage({ user }: { user: AuthUser | null }) {
                   />
                 </div>
               </div>
-              <Button className="w-fit bg-emerald-700 hover:bg-emerald-800" type="submit">
-                Simpan Profil
+              <Button className="w-fit bg-emerald-700 hover:bg-emerald-800" type="submit" disabled={isSaving}>
+                {isSaving ? 'Menyimpan...' : 'Simpan Profil'}
               </Button>
             </form>
           ) : (

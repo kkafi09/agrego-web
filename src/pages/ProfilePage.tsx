@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { useMutation } from 'convex/react'
+import toast from 'react-hot-toast'
 import { api } from '../../convex/_generated/api'
 import type { AuthUser } from '../lib/auth'
-import BrandLoader from '../components/brand/brand-loader'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
@@ -16,17 +16,13 @@ export function ProfilePage({
 }) {
   const [name, setName] = useState(user?.name ?? '')
   const [email, setEmail] = useState(user?.email ?? '')
-  const [saved, setSaved] = useState(false)
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
   const updateUserProfile = useMutation(api.auth.updateUserProfile)
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
     if (!user?.id) return
     setLoading(true)
-    setError('')
-    setSaved(false)
     try {
       await updateUserProfile({
         userId: user.id as any,
@@ -35,9 +31,9 @@ export function ProfilePage({
       })
       const updatedUser = { ...user, name, email }
       onSave(updatedUser)
-      setSaved(true)
+      toast.success('Profil berhasil diperbarui.')
     } catch (err) {
-      setError((err as Error).message || 'Gagal menyimpan profil.')
+      toast.error((err as Error).message || 'Gagal menyimpan profil.')
     } finally {
       setLoading(false)
     }
@@ -45,7 +41,6 @@ export function ProfilePage({
 
   return (
     <>
-      {loading && <BrandLoader />}
       <header className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-6 [&_h1]:text-2xl [&_h1]:font-black [&_h1]:tracking-normal [&_h1]:text-slate-950 sm:[&_h1]:text-3xl">
         <div>
           <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-700">AGREGO / Profil</p>
@@ -75,10 +70,8 @@ export function ProfilePage({
             />
           </div>
           <Button className="w-fit bg-emerald-700 hover:bg-emerald-800" type="submit" disabled={loading}>
-            Simpan Profil
+            {loading ? 'Menyimpan...' : 'Simpan Profil'}
           </Button>
-          {saved ? <p className="text-sm font-bold text-emerald-700">Profil berhasil diperbarui.</p> : null}
-          {error ? <small className="text-xs font-semibold text-rose-600">{error}</small> : null}
         </form>
       </section>
     </>

@@ -13,8 +13,7 @@ import {
   Users,
   Wheat,
   Building2,
-  User,
-  LogOut
+  User
 } from 'lucide-react'
 import type { ComponentType } from 'react'
 
@@ -42,7 +41,7 @@ export type Page =
   | 'cooperativeProfile'
 
 export interface NavigationItem {
-  id: Page | 'logout'
+  id: Page
   label: string
   icon: ComponentType<any>
 }
@@ -95,8 +94,7 @@ export const navigationGroups: NavigationGroup[] = [
   {
     label: 'AKUN',
     items: [
-      { id: 'profile', label: 'Profil', icon: User },
-      { id: 'logout', label: 'Logout', icon: LogOut }
+      { id: 'profile', label: 'Profil', icon: User }
     ]
   }
 ]

@@ -92,7 +92,7 @@ export function ContractDetailPage() {
           </div>
           <span>Database terkoneksi</span>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 [&_label]:grid [&_label]:gap-2 [&_label>span]:text-sm [&_label>span]:font-bold [&_label>span]:text-slate-700 [&_select]:h-11 [&_select]:rounded-lg [&_select]:border [&_select]:border-slate-200 [&_select]:bg-white [&_select]:px-3 [&_select]:text-sm [&_select]:font-semibold [&_select]:outline-none [&_select:focus]:border-emerald-500 [&_select:focus]:ring-4 [&_select:focus]:ring-emerald-100">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4-slate-200">
           <label>
             <span>Status Kontrak</span>
             <Select
@@ -110,7 +110,7 @@ export function ContractDetailPage() {
               <SelectTrigger className="h-11 w-full rounded-lg bg-white text-sm font-semibold text-slate-800">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent position="popper">
                 <SelectItem value="draft">Baru</SelectItem>
                 <SelectItem value="active">Aktif</SelectItem>
                 <SelectItem value="completed">Selesai</SelectItem>

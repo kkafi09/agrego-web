@@ -54,7 +54,7 @@ export function DepositReportPage() {
         </div>
       </header>
 
-      <section className="grid gap-4 sm:grid-cols-2 [&_label]:grid [&_label]:gap-2 [&_label>span]:text-sm [&_label>span]:font-bold [&_label>span]:text-slate-700 [&_input]:h-11 [&_input]:rounded-lg [&_input]:border [&_input]:border-slate-200 [&_input]:bg-white [&_input]:px-3 [&_input]:text-sm [&_input]:font-semibold [&_input]:outline-none [&_input:focus]:border-emerald-500 [&_input:focus]:ring-4 [&_input:focus]:ring-emerald-100 [&_select]:h-11 [&_select]:rounded-lg [&_select]:border [&_select]:border-slate-200 [&_select]:bg-white [&_select]:px-3 [&_select]:text-sm [&_select]:font-semibold [&_select]:outline-none [&_select:focus]:border-emerald-500 [&_select:focus]:ring-4 [&_select:focus]:ring-emerald-100 xl:grid-cols-4">
+      <section className="grid gap-4 sm:grid-cols-2-slate-200-slate-200 xl:grid-cols-4">
         <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm [&>span]:text-sm [&>span]:font-bold [&>span]:text-slate-500 [&>strong]:mt-3 [&>strong]:block [&>strong]:text-2xl [&>strong]:font-black [&>strong]:text-slate-950 [&>small]:mt-2 [&>small]:block [&>small]:text-sm [&>small]:font-semibold [&>small]:text-slate-500">
           <span>Setoran</span>
           <strong>{filteredRecords.length}</strong>
@@ -105,14 +105,14 @@ export function DepositReportPage() {
             Unduh CSV
           </Button>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 [&_label]:grid [&_label]:gap-2 [&_label>span]:text-sm [&_label>span]:font-bold [&_label>span]:text-slate-700 [&_input]:h-11 [&_input]:rounded-lg [&_input]:border [&_input]:border-slate-200 [&_input]:bg-white [&_input]:px-3 [&_input]:text-sm [&_input]:font-semibold [&_input]:outline-none [&_input:focus]:border-emerald-500 [&_input:focus]:ring-4 [&_input:focus]:ring-emerald-100 [&_select]:h-11 [&_select]:rounded-lg [&_select]:border [&_select]:border-slate-200 [&_select]:bg-white [&_select]:px-3 [&_select]:text-sm [&_select]:font-semibold [&_select]:outline-none [&_select:focus]:border-emerald-500 [&_select:focus]:ring-4 [&_select:focus]:ring-emerald-100">
-          <label>
-            <span>Komoditas</span>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <label className="grid gap-2">
+            <span className="text-sm font-bold text-slate-700">Komoditas</span>
             <Select value={commodityFilter} onValueChange={setCommodityFilter}>
-              <SelectTrigger className="h-11 w-full rounded-lg bg-white text-sm font-semibold text-slate-800">
+              <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent position="popper">
                 <SelectItem value="Semua">Semua</SelectItem>
                 {commodities?.map((commodity) => (
                   <SelectItem key={commodity._id} value={commodity.name}>{commodity.name}</SelectItem>
@@ -121,31 +121,39 @@ export function DepositReportPage() {
             </Select>
           </label>
         </div>
-        <div className="deposit-table">
-          <div className="deposit-table-head">
-            <span>ID</span>
-            <span>Anggota</span>
-            <span>Komoditas</span>
-            <span>Berat</span>
-            <span>Tanggal</span>
-            <span>Quality</span>
-            <span>Status</span>
+        <div className="mt-5 overflow-hidden rounded-xl border border-slate-200 bg-white">
+          <div className="overflow-x-auto">
+            <table className="min-w-full border-collapse text-left text-sm">
+              <thead className="bg-slate-50 text-xs font-black uppercase tracking-wide text-slate-500">
+                <tr>
+                  <th className="px-4 py-3">ID</th>
+                  <th className="px-4 py-3">Anggota</th>
+                  <th className="px-4 py-3">Komoditas</th>
+                  <th className="px-4 py-3">Berat</th>
+                  <th className="px-4 py-3">Tanggal</th>
+                  <th className="px-4 py-3">Quality</th>
+                  <th className="px-4 py-3">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {records === undefined && koperasiId ? (
+                  <tr><td colSpan={7} className="px-4 py-10 text-center text-sm font-semibold text-slate-500">Memuat laporan setoran...</td></tr>
+                ) : filteredRecords.length === 0 ? (
+                  <tr><td colSpan={7} className="px-4 py-10 text-center text-sm font-semibold text-slate-500">Belum ada data setoran untuk laporan.</td></tr>
+                ) : filteredRecords.map((record) => (
+                  <tr className="transition hover:bg-emerald-50/50" key={record.id}>
+                    <td className="px-4 py-3 font-mono text-xs font-black text-emerald-700">{record.depositNumber}</td>
+                    <td className="px-4 py-3 font-black text-slate-950">{record.memberName}</td>
+                    <td className="px-4 py-3 font-semibold text-slate-700">{record.commodityName}</td>
+                    <td className="px-4 py-3 font-semibold text-slate-700">{formatKg(record.weightKg)}</td>
+                    <td className="px-4 py-3 font-semibold text-slate-700">{formatDate(record.submittedAt)}</td>
+                    <td className="px-4 py-3 font-semibold text-slate-700">{record.qualityScore ?? '-'}</td>
+                    <td className="px-4 py-3 font-semibold text-slate-700">{mapDepositStatus(record.status)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-          {records === undefined && koperasiId ? (
-            <p className="p-4 text-sm font-bold text-emerald-700">Memuat laporan setoran...</p>
-          ) : filteredRecords.length === 0 ? (
-            <p className="p-4 text-sm font-bold text-emerald-700">Belum ada data setoran untuk laporan.</p>
-          ) : filteredRecords.map((record) => (
-            <article className="deposit-row" key={record.id}>
-              <span className="font-mono text-xs font-black text-emerald-700">{record.depositNumber}</span>
-              <strong>{record.memberName}</strong>
-              <span>{record.commodityName}</span>
-              <span>{formatKg(record.weightKg)}</span>
-              <span>{formatDate(record.submittedAt)}</span>
-              <span>{record.qualityScore ?? '-'}</span>
-              <span>{mapDepositStatus(record.status)}</span>
-            </article>
-          ))}
         </div>
       </section>
     </>

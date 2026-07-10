@@ -18,6 +18,7 @@ interface DataTableProps<T> {
   searchPlaceholder?: string
   searchValue?: string
   onSearchChange?: (value: string) => void
+  emptyMessage?: string
 }
 
 export default function DataTable<T>({
@@ -28,7 +29,8 @@ export default function DataTable<T>({
   selectedRowKey,
   searchPlaceholder,
   searchValue,
-  onSearchChange
+  onSearchChange,
+  emptyMessage = 'Tidak ada data yang tersedia',
 }: DataTableProps<T>) {
   const showSearch = onSearchChange !== undefined && searchValue !== undefined
 
@@ -63,7 +65,7 @@ export default function DataTable<T>({
             {data.length === 0 ? (
               <tr>
                 <td colSpan={columns.length} className="px-4 py-10 text-center text-sm font-semibold text-slate-500">
-                  Tidak ada data yang tersedia
+                  {emptyMessage}
                 </td>
               </tr>
             ) : (

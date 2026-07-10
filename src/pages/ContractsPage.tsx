@@ -61,14 +61,14 @@ export function ContractsPage({ goToPage }: { goToPage: (page: Page) => void }) 
             Buat Kontrak
           </Button>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 [&_label]:grid [&_label]:gap-2 [&_label>span]:text-sm [&_label>span]:font-bold [&_label>span]:text-slate-700 [&_select]:h-11 [&_select]:rounded-lg [&_select]:border [&_select]:border-slate-200 [&_select]:bg-white [&_select]:px-3 [&_select]:text-sm [&_select]:font-semibold [&_select]:outline-none [&_select:focus]:border-emerald-500 [&_select:focus]:ring-4 [&_select:focus]:ring-emerald-100" aria-label="Filter daftar kontrak">
-          <label>
-            <span>Status</span>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" aria-label="Filter daftar kontrak">
+          <label className="grid gap-2">
+            <span className="text-sm font-bold text-slate-700">Status</span>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="h-11 w-full rounded-lg bg-white text-sm font-semibold text-slate-800">
+              <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent position="popper">
                 <SelectItem value="Semua">Semua</SelectItem>
                 <SelectItem value="Baru">Baru</SelectItem>
                 <SelectItem value="Aktif">Aktif</SelectItem>
@@ -77,13 +77,13 @@ export function ContractsPage({ goToPage }: { goToPage: (page: Page) => void }) 
               </SelectContent>
             </Select>
           </label>
-          <label>
-            <span>Komoditas</span>
+          <label className="grid gap-2">
+            <span className="text-sm font-bold text-slate-700">Komoditas</span>
             <Select value={commodityFilter} onValueChange={setCommodityFilter}>
-              <SelectTrigger className="h-11 w-full rounded-lg bg-white text-sm font-semibold text-slate-800">
+              <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent position="popper">
                 <SelectItem value="Semua">Semua</SelectItem>
                 {commodityList?.map((commodity) => (
                   <SelectItem key={commodity._id} value={commodity.name}>{commodity.name}</SelectItem>
@@ -92,46 +92,67 @@ export function ContractsPage({ goToPage }: { goToPage: (page: Page) => void }) 
             </Select>
           </label>
         </div>
-        <div className="mt-5 grid gap-4">
-          {contracts === undefined && koperasiId ? (
-            <p className="text-sm font-bold text-emerald-700">Memuat data kontrak...</p>
-          ) : filteredContracts.length === 0 ? (
-            <p className="text-sm font-bold text-emerald-700">Belum ada kontrak buyer.</p>
-          ) : filteredContracts.map((contract) => {
-            const percent = progressPercent(contract.fulfilledVolumeKg, contract.targetVolumeKg)
-            const statusLabel = mapContractStatus(contract.status as ContractStatus)
-            const statusStyle = getStatusStyle(statusLabel)
+        <div className="mt-5 overflow-hidden rounded-xl border border-slate-200 bg-white">
+          <div className="overflow-x-auto">
+            <table className="min-w-full border-collapse text-left text-sm">
+              <thead className="bg-slate-50 text-xs font-black uppercase tracking-wide text-slate-500">
+                <tr>
+                  <th className="px-4 py-3">Kontrak</th>
+                  <th className="px-4 py-3">Komoditas</th>
+                  <th className="px-4 py-3">Target</th>
+                  <th className="px-4 py-3">Minimum QS</th>
+                  <th className="px-4 py-3">Tenggat</th>
+                  <th className="px-4 py-3">Progress</th>
+                  <th className="px-4 py-3 text-right">Aksi</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {contracts === undefined && koperasiId ? (
+                  <tr><td colSpan={7} className="px-4 py-10 text-center text-sm font-semibold text-slate-500">Memuat data kontrak...</td></tr>
+                ) : filteredContracts.length === 0 ? (
+                  <tr><td colSpan={7} className="px-4 py-10 text-center text-sm font-semibold text-slate-500">Belum ada kontrak buyer.</td></tr>
+                ) : filteredContracts.map((contract) => {
+                  const percent = progressPercent(contract.fulfilledVolumeKg, contract.targetVolumeKg)
+                  const statusLabel = mapContractStatus(contract.status as ContractStatus)
+                  const statusStyle = getStatusStyle(statusLabel)
 
-            return (
-              <article className="grid gap-5 rounded-xl border border-slate-200 bg-white p-4 shadow-sm xl:grid-cols-[1fr_1.4fr_0.9fr] xl:items-center" key={contract.contractId}>
-                <div className="grid gap-2">
-                  <span className={`inline-flex w-fit items-center rounded-full border px-2.5 py-1 text-xs font-black ${statusStyle.className}`}>{statusStyle.label}</span>
-                  <strong className="text-base font-black text-slate-950">{contract.contractNumber}</strong>
-                  <p className="text-sm font-semibold text-slate-500">{contract.buyerName}</p>
-                </div>
-                <dl className="grid gap-3 sm:grid-cols-4">
-                  <div><dt className="text-xs font-semibold text-slate-500">Komoditas</dt><dd className="mt-1 text-sm font-black text-slate-950">{contract.commodityName}</dd></div>
-                  <div><dt className="text-xs font-semibold text-slate-500">Target</dt><dd className="mt-1 text-sm font-black text-slate-950">{formatKg(contract.targetVolumeKg)}</dd></div>
-                  <div><dt className="text-xs font-semibold text-slate-500">Minimum QS</dt><dd className="mt-1 text-sm font-black text-slate-950">{contract.minimumQualityScore}</dd></div>
-                  <div><dt className="text-xs font-semibold text-slate-500">Tenggat</dt><dd className="mt-1 text-sm font-black text-slate-950">{formatDate(contract.deadlineAt)}</dd></div>
-                </dl>
-                <div className="grid gap-2">
-                  <div className="flex items-center justify-between gap-3 text-sm"><span>Progress pemenuhan</span><strong>{percent}%</strong></div>
-                  <div className="h-2 overflow-hidden rounded-full bg-slate-100"><span className="block h-full rounded-full bg-emerald-600" style={{ width: `${percent}%` }} /></div>
-                  <button
-                    className="text-sm font-black text-emerald-700 transition hover:text-emerald-800"
-                    type="button"
-                    onClick={() => {
-                      sessionStorage.setItem('agrego_selected_contract_id', contract.contractId)
-                      goToPage('contractDetail')
-                    }}
-                  >
-                    Lihat Detail
-                  </button>
-                </div>
-              </article>
-            )
-          })}
+                  return (
+                    <tr className="transition hover:bg-emerald-50/50" key={contract.contractId}>
+                      <td className="px-4 py-3">
+                        <span className={`mb-2 inline-flex w-fit items-center rounded-full border px-2.5 py-1 text-xs font-black ${statusStyle.className}`}>{statusStyle.label}</span>
+                        <strong className="block text-sm font-black text-slate-950">{contract.contractNumber}</strong>
+                        <span className="text-xs font-semibold text-slate-500">{contract.buyerName}</span>
+                      </td>
+                      <td className="px-4 py-3 font-semibold text-slate-700">{contract.commodityName}</td>
+                      <td className="px-4 py-3 font-semibold text-slate-700">{formatKg(contract.targetVolumeKg)}</td>
+                      <td className="px-4 py-3 font-semibold text-slate-700">{contract.minimumQualityScore}</td>
+                      <td className="px-4 py-3 font-semibold text-slate-700">{formatDate(contract.deadlineAt)}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex min-w-36 items-center gap-2">
+                          <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-100"><span className="block h-full rounded-full bg-emerald-600" style={{ width: `${percent}%` }} /></div>
+                          <strong className="text-xs">{percent}%</strong>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          type="button"
+                          className="text-emerald-700 hover:text-emerald-800"
+                          onClick={() => {
+                            sessionStorage.setItem('agrego_selected_contract_id', contract.contractId)
+                            goToPage('contractDetail')
+                          }}
+                        >
+                          Detail
+                        </Button>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
     </>

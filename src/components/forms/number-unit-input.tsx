@@ -30,7 +30,7 @@ export default function NumberUnitInput({
         <Input
           id={id}
           type="number"
-          className="h-11 min-w-0 flex-1 rounded-none border-0 bg-transparent px-3 text-sm font-semibold text-slate-800 shadow-none outline-none placeholder:text-slate-400 focus-visible:ring-0"
+          className="h-12 min-w-0 flex-1 rounded-none border-0 bg-slate-50 px-3 text-sm font-semibold text-slate-800 shadow-none outline-none placeholder:text-slate-400 focus-visible:bg-white focus-visible:ring-0"
           onChange={(e) => onChange(e.target.value)}
           aria-invalid={Boolean(error)}
           {...props}

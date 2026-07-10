@@ -84,7 +84,7 @@ export function QcFormPage() {
               <SelectTrigger className="h-11 w-full rounded-lg bg-white text-sm font-semibold text-slate-800">
                 <SelectValue placeholder="Pilih setoran" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent position="popper">
                 {deposits?.map((deposit) => (
                   <SelectItem key={deposit.id} value={deposit.id}>
                     {deposit.depositNumber} / {deposit.memberName}
@@ -105,7 +105,7 @@ export function QcFormPage() {
                 <SelectTrigger className="h-11 w-full rounded-lg bg-white text-sm font-semibold text-slate-800">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent position="popper">
                   {gradeOptions.map((grade) => (
                     <SelectItem key={grade} value={grade}>{grade}</SelectItem>
                   ))}

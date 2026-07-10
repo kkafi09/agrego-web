@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useQuery } from 'convex/react'
 import { api } from '../../convex/_generated/api'
-import { cn } from '../lib/utils'
+import { Button } from '../components/ui/button'
 import { downloadCsv, formatDate, formatKg } from './shared'
 
 type ProfitShareRow = {
@@ -49,8 +49,8 @@ export function ProfitSharesPage() {
               <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-700">Riwayat Bagi Hasil</p>
               <h2>Distribusi per kontrak</h2>
             </div>
-            <button
-              className="inline-flex items-center justify-center rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-black text-white shadow-sm transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
+            <Button
+              className="bg-emerald-700 hover:bg-emerald-800"
               disabled={profitRows.length === 0}
               type="button"
               onClick={() =>
@@ -68,37 +68,43 @@ export function ProfitSharesPage() {
               }
             >
               Unduh CSV
-            </button>
+            </Button>
           </div>
-          <div className="grid gap-3">
-            {rows === undefined ? (
-              <p className="text-sm font-bold text-emerald-700">Memuat riwayat bagi hasil...</p>
-            ) : profitRows.length === 0 ? (
-              <p className="text-sm font-bold text-emerald-700">Belum ada pembagian hasil. Jalankan perhitungan dari kontrak yang sudah dialokasikan.</p>
-            ) : profitRows.map((row) => (
-              <button
-                className={cn(
-                  'grid gap-3 rounded-xl border p-4 text-left transition hover:border-emerald-300 hover:bg-emerald-50/50 sm:grid-cols-[1fr_1fr_auto_auto] sm:items-center',
-                  selectedMember === row.memberName
-                    ? 'border-emerald-500 bg-emerald-50 shadow-sm'
-                    : 'border-slate-200 bg-white',
-                )}
-                key={row.shareId}
-                type="button"
-                onClick={() => setSelectedMember(row.memberName)}
-              >
-                <div>
-                  <strong>{row.memberName}</strong>
-                  <span>{row.contractNumber ?? '-'}</span>
-                </div>
-                <div>
-                  <span>{formatDate(row.calculatedAt)}</span>
-                  <b>Rp{row.amountEarned.toLocaleString('id-ID')}</b>
-                </div>
-                <span className="inline-flex w-fit items-center rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-black text-emerald-700">QS {row.qualityScore}</span>
-                <small>{formatKg(row.contributedWeightKg)}</small>
-              </button>
-            ))}
+          <div className="mt-5 overflow-hidden rounded-xl border border-slate-200 bg-white">
+            <div className="overflow-x-auto">
+              <table className="min-w-full border-collapse text-left text-sm">
+                <thead className="bg-slate-50 text-xs font-black uppercase tracking-wide text-slate-500">
+                  <tr>
+                    <th className="px-4 py-3">Anggota</th>
+                    <th className="px-4 py-3">Kontrak</th>
+                    <th className="px-4 py-3">Tanggal</th>
+                    <th className="px-4 py-3">QS</th>
+                    <th className="px-4 py-3">Kontribusi</th>
+                    <th className="px-4 py-3 text-right">Nominal</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {rows === undefined ? (
+                    <tr><td colSpan={6} className="px-4 py-10 text-center text-sm font-semibold text-slate-500">Memuat riwayat bagi hasil...</td></tr>
+                  ) : profitRows.length === 0 ? (
+                    <tr><td colSpan={6} className="px-4 py-10 text-center text-sm font-semibold text-slate-500">Belum ada pembagian hasil. Jalankan perhitungan dari kontrak yang sudah dialokasikan.</td></tr>
+                  ) : profitRows.map((row) => (
+                    <tr
+                      className={`cursor-pointer transition hover:bg-emerald-50/50 ${selectedMember === row.memberName ? 'bg-emerald-50' : ''}`}
+                      key={row.shareId}
+                      onClick={() => setSelectedMember(row.memberName)}
+                    >
+                      <td className="px-4 py-3 font-black text-slate-950">{row.memberName}</td>
+                      <td className="px-4 py-3 font-semibold text-slate-600">{row.contractNumber ?? '-'}</td>
+                      <td className="px-4 py-3 font-semibold text-slate-600">{formatDate(row.calculatedAt)}</td>
+                      <td className="px-4 py-3"><span className="inline-flex w-fit items-center rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-black text-emerald-700">QS {row.qualityScore}</span></td>
+                      <td className="px-4 py-3 font-semibold text-slate-600">{formatKg(row.contributedWeightKg)}</td>
+                      <td className="px-4 py-3 text-right font-black text-slate-950">Rp{row.amountEarned.toLocaleString('id-ID')}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 

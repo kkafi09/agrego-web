@@ -112,7 +112,7 @@ export function DepositHistoryPage() {
         subtitle={`Total setoran tercatat: ${deposits.length} transaksi`}
       />
 
-      <section className="grid gap-4 sm:grid-cols-2 [&_label]:grid [&_label]:gap-2 [&_label>span]:text-sm [&_label>span]:font-bold [&_label>span]:text-slate-700 [&_input]:h-11 [&_input]:rounded-lg [&_input]:border [&_input]:border-slate-200 [&_input]:bg-white [&_input]:px-3 [&_input]:text-sm [&_input]:font-semibold [&_input]:outline-none [&_input:focus]:border-emerald-500 [&_input:focus]:ring-4 [&_input:focus]:ring-emerald-100 [&_select]:h-11 [&_select]:rounded-lg [&_select]:border [&_select]:border-slate-200 [&_select]:bg-white [&_select]:px-3 [&_select]:text-sm [&_select]:font-semibold [&_select]:outline-none [&_select:focus]:border-emerald-500 [&_select:focus]:ring-4 [&_select:focus]:ring-emerald-100 xl:grid-cols-4" aria-label="Ringkasan riwayat setoran">
+      <section className="grid gap-4 sm:grid-cols-2-slate-200-slate-200 xl:grid-cols-4" aria-label="Ringkasan riwayat setoran">
         <MetricCard title="Total Volume" value={formatKg(totals.totalWeight)} description="Dari semua komoditas" icon={Wheat} />
         <MetricCard title="Menunggu QC" value={totals.waitingQc} description="Perlu pemeriksaan kualitas" icon={AlertTriangle} isAlert={totals.waitingQc > 0} />
         <MetricCard title="Lolos QC" value={totals.ready} description="Siap masuk supply pool" icon={TrendingUp} />
@@ -126,22 +126,17 @@ export function DepositHistoryPage() {
             <h2 className="text-lg font-black text-slate-950">Daftar panen yang diterima koperasi</h2>
           </div>
 
-          {records === undefined && koperasiId ? (
-            <p className="text-sm font-bold text-emerald-700">Memuat data setoran...</p>
-          ) : deposits.length === 0 ? (
-            <p className="text-sm font-bold text-emerald-700">Belum ada setoran. Tambahkan anggota dan komoditas terlebih dahulu.</p>
-          ) : (
-            <DataTable
-              data={filteredRecords}
-              columns={columns}
-              keyExtractor={(item) => item.id}
-              onRowClick={(item) => setSelectedDepositId(item.id)}
-              selectedRowKey={selectedDeposit?.id}
-              searchPlaceholder="Cari ID, anggota, komoditas..."
-              searchValue={searchTerm}
-              onSearchChange={setSearchTerm}
-            />
-          )}
+          <DataTable
+            data={records === undefined && koperasiId ? [] : filteredRecords}
+            columns={columns}
+            keyExtractor={(item) => item.id}
+            onRowClick={(item) => setSelectedDepositId(item.id)}
+            selectedRowKey={selectedDeposit?.id}
+            searchPlaceholder="Cari ID, anggota, komoditas..."
+            searchValue={searchTerm}
+            onSearchChange={setSearchTerm}
+            emptyMessage={records === undefined && koperasiId ? 'Memuat data setoran...' : 'Belum ada setoran. Tambahkan anggota dan komoditas terlebih dahulu.'}
+          />
         </div>
 
         {selectedDeposit ? (

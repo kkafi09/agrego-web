@@ -153,7 +153,7 @@ function App() {
                     <Route path={getPagePath('deposits')} element={requireAuth(<DepositHistoryPage />)} />
                     <Route
                         path={getPagePath('newDeposit')}
-                        element={requireAuth(<NewDepositPage goToPage={goToPage} />)}
+                        element={requireAuth(<NewDepositPage goToPage={goToPage} user={user} />)}
                     />
                     <Route path={getPagePath('qcHistory')} element={requireAuth(<QcHistoryPage />)} />
                     <Route path={getPagePath('qcDepositDetail')} element={requireAuth(<QcDepositDetailPage />)} />
@@ -162,7 +162,7 @@ function App() {
                     <Route path={getPagePath('allocation')} element={requireAuth(<AllocationPage />)} />
                     <Route path={getPagePath('allocationStatus')} element={requireAuth(<AllocationStatusPage />)} />
                     <Route path={getPagePath('contracts')} element={requireAuth(<ContractsPage goToPage={goToPage} />)} />
-                    <Route path={getPagePath('newContract')} element={requireAuth(<NewContractPage />)} />
+                    <Route path={getPagePath('newContract')} element={requireAuth(<NewContractPage goToPage={goToPage} user={user} />)} />
                     <Route path={getPagePath('contractDetail')} element={requireAuth(<ContractDetailPage />)} />
                     <Route path={getPagePath('depositReport')} element={requireAuth(<DepositReportPage />)} />
                     <Route path={getPagePath('profitShares')} element={requireAuth(<ProfitSharesPage />)} />

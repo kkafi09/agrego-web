@@ -30,7 +30,7 @@ export function QcHistoryPage() {
         </div>
       </header>
 
-      <section className="grid gap-4 sm:grid-cols-2 [&_label]:grid [&_label]:gap-2 [&_label>span]:text-sm [&_label>span]:font-bold [&_label>span]:text-slate-700 [&_input]:h-11 [&_input]:rounded-lg [&_input]:border [&_input]:border-slate-200 [&_input]:bg-white [&_input]:px-3 [&_input]:text-sm [&_input]:font-semibold [&_input]:outline-none [&_input:focus]:border-emerald-500 [&_input:focus]:ring-4 [&_input:focus]:ring-emerald-100 [&_select]:h-11 [&_select]:rounded-lg [&_select]:border [&_select]:border-slate-200 [&_select]:bg-white [&_select]:px-3 [&_select]:text-sm [&_select]:font-semibold [&_select]:outline-none [&_select:focus]:border-emerald-500 [&_select:focus]:ring-4 [&_select:focus]:ring-emerald-100 xl:grid-cols-4" aria-label="Ringkasan riwayat QC">
+      <section className="grid gap-4 sm:grid-cols-2-slate-200-slate-200 xl:grid-cols-4" aria-label="Ringkasan riwayat QC">
         <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm [&>span]:text-sm [&>span]:font-bold [&>span]:text-slate-500 [&>strong]:mt-3 [&>strong]:block [&>strong]:text-2xl [&>strong]:font-black [&>strong]:text-slate-950 [&>small]:mt-2 [&>small]:block [&>small]:text-sm [&>small]:font-semibold [&>small]:text-slate-500"><span>Total QC</span><strong>{records.length}</strong><small>Pemeriksaan tercatat</small></article>
         <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm [&>span]:text-sm [&>span]:font-bold [&>span]:text-slate-500 [&>strong]:mt-3 [&>strong]:block [&>strong]:text-2xl [&>strong]:font-black [&>strong]:text-slate-950 [&>small]:mt-2 [&>small]:block [&>small]:text-sm [&>small]:font-semibold [&>small]:text-slate-500"><span>Lolos Standar</span><strong>{passedCount}</strong><small>Siap dipertimbangkan alokasi</small></article>
         <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm [&>span]:text-sm [&>span]:font-bold [&>span]:text-slate-500 [&>strong]:mt-3 [&>strong]:block [&>strong]:text-2xl [&>strong]:font-black [&>strong]:text-slate-950 [&>small]:mt-2 [&>small]:block [&>small]:text-sm [&>small]:font-semibold [&>small]:text-slate-500"><span>Perlu Ditahan</span><strong>{records.length - passedCount}</strong><small>Butuh tindak lanjut koperasi</small></article>
@@ -45,38 +45,51 @@ export function QcHistoryPage() {
           </div>
           <span>Database terkoneksi</span>
         </div>
-        <div className="mt-5 overflow-x-auto rounded-xl border border-slate-200" role="table" aria-label="Riwayat QC">
-          <div className="grid min-w-[900px] grid-cols-8 gap-3 bg-slate-50 px-4 py-3 text-xs font-black uppercase tracking-wide text-slate-500" role="row">
-            <span>ID QC</span><span>Setoran</span><span>Komoditas</span><span>Kadar Air</span><span>Grade</span><span>Kerusakan</span><span>Skor</span><span>Keputusan</span>
+        <div className="mt-5 overflow-hidden rounded-xl border border-slate-200 bg-white" aria-label="Riwayat QC">
+          <div className="overflow-x-auto">
+            <table className="min-w-[900px] border-collapse text-left text-sm">
+              <thead className="bg-slate-50 text-xs font-black uppercase tracking-wide text-slate-500">
+                <tr>
+                  <th className="px-4 py-3">ID QC</th>
+                  <th className="px-4 py-3">Setoran</th>
+                  <th className="px-4 py-3">Komoditas</th>
+                  <th className="px-4 py-3">Kadar Air</th>
+                  <th className="px-4 py-3">Grade</th>
+                  <th className="px-4 py-3">Kerusakan</th>
+                  <th className="px-4 py-3">Skor</th>
+                  <th className="px-4 py-3">Keputusan</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {qualityChecks === undefined && koperasiId ? (
+                  <tr><td colSpan={8} className="px-4 py-10 text-center text-sm font-semibold text-slate-500">Memuat riwayat QC...</td></tr>
+                ) : records.length === 0 ? (
+                  <tr><td colSpan={8} className="px-4 py-10 text-center text-sm font-semibold text-slate-500">Belum ada pemeriksaan kualitas.</td></tr>
+                ) : records.map((record) => {
+                  const decision = mapQualityDecision(record.decision)
+                  return (
+                    <tr
+                      className="cursor-pointer transition hover:bg-emerald-50/50"
+                      key={record.id}
+                      onClick={() => {
+                        sessionStorage.setItem('agrego_selected_quality_check_id', record.id)
+                        navigate(getPagePath('qcResultDetail'))
+                      }}
+                    >
+                      <td className="px-4 py-3 font-mono text-xs font-black text-emerald-700">{record.id}</td>
+                      <td className="px-4 py-3"><strong className="block text-slate-950">{record.depositNumber ?? '-'}</strong><small className="font-semibold text-slate-500">{record.memberName} / {record.inspectorName}</small></td>
+                      <td className="px-4 py-3 font-semibold text-slate-700">{record.commodityName}</td>
+                      <td className="px-4 py-3 font-semibold text-slate-700">{record.moisturePercent}%</td>
+                      <td className="px-4 py-3 font-semibold text-slate-700">{record.sizeGrade}</td>
+                      <td className="px-4 py-3 font-semibold text-slate-700">{record.defectPercent}%</td>
+                      <td className="px-4 py-3 font-black text-slate-950">{record.qualityScore}</td>
+                      <td className="px-4 py-3"><span className={`inline-flex w-fit items-center rounded-full border px-2.5 py-1 text-xs font-black ${getStatusStyle(decision).className}`}>{getStatusStyle(decision).label}</span></td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
           </div>
-          {qualityChecks === undefined && koperasiId ? (
-            <p className="p-4 text-sm font-bold text-emerald-700">Memuat riwayat QC...</p>
-          ) : records.length === 0 ? (
-            <p className="p-4 text-sm font-bold text-emerald-700">Belum ada pemeriksaan kualitas.</p>
-          ) : records.map((record) => {
-            const decision = mapQualityDecision(record.decision)
-            return (
-              <button
-                className="grid min-w-[900px] grid-cols-8 gap-3 border-t border-slate-100 px-4 py-3 text-left text-sm text-slate-700"
-                role="row"
-                key={record.id}
-                type="button"
-                onClick={() => {
-                  sessionStorage.setItem('agrego_selected_quality_check_id', record.id)
-                  navigate(getPagePath('qcResultDetail'))
-                }}
-              >
-                <span className="font-mono text-xs font-black text-emerald-700">{record.id}</span>
-                <div><strong>{record.depositNumber ?? '-'}</strong><small>{record.memberName} / {record.inspectorName}</small></div>
-                <span>{record.commodityName}</span>
-                <span>{record.moisturePercent}%</span>
-                <span>{record.sizeGrade}</span>
-                <span>{record.defectPercent}%</span>
-                <strong>{record.qualityScore}</strong>
-                <span className={`inline-flex w-fit items-center rounded-full border px-2.5 py-1 text-xs font-black ${getStatusStyle(decision).className}`}>{getStatusStyle(decision).label}</span>
-              </button>
-            )
-          })}
         </div>
       </section>
     </>
