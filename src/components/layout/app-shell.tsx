@@ -25,12 +25,19 @@ export default function AppShell({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   const isAuthPage = ['login', 'register', 'resetPassword'].includes(currentPage)
+  const isScrollableAuthPage = currentPage === 'register'
 
   // Renders login/register screens clean without sidebar/headers
   if (isAuthPage || !user) {
     return (
-      <div className="min-h-screen min-h-svh flex items-center justify-center bg-[#fcfdfa] p-6">
-        <main className="w-full max-w-[440px] flex flex-col gap-2">{children}</main>
+      <div
+        className={`flex min-h-screen min-h-svh justify-center bg-[#fcfdfa] px-4 sm:px-6 ${
+          isScrollableAuthPage ? 'items-start py-6 sm:py-10' : 'items-center py-6'
+        }`}
+      >
+        <main className={`flex w-full flex-col gap-2 ${isScrollableAuthPage ? 'max-w-[560px]' : 'max-w-[440px]'}`}>
+          {children}
+        </main>
       </div>
     )
   }

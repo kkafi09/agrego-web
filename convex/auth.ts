@@ -5,7 +5,11 @@ import { mutation, query } from "./_generated/server";
 
 type UserRole = "admin" | "cooperative" | "buyer" | "member";
 
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+function normalizeEmail(email: string) {
+  return email.trim().toLowerCase();
+}
 
 async function hashPassword(password: string) {
   const bytes = new TextEncoder().encode(password);
@@ -45,13 +49,24 @@ export const registerUser = mutation({
     role: v.union(v.literal("cooperative"), v.literal("buyer")),
   },
   handler: async (ctx, args) => {
+    const name = args.name.trim();
+    const email = normalizeEmail(args.email);
+
+    if (name.length < 3) {
+      throw new Error("Nama minimal 3 karakter.");
+    }
+
+    if (!emailPattern.test(email)) {
+      throw new Error("Email harus valid.");
+    }
+
     if (args.password.length < 6) {
       throw new Error("Password minimal 6 karakter.");
     }
 
     const existing = await ctx.db
       .query("users")
-      .withIndex("by_email", (q) => q.eq("email", args.email))
+      .withIndex("by_email", (q) => q.eq("email", email))
       .first();
 
     if (existing) {
@@ -59,8 +74,8 @@ export const registerUser = mutation({
     }
 
     const userId = await ctx.db.insert("users", {
-      name: args.name,
-      email: args.email,
+      name,
+      email,
       role: args.role,
       passwordHash: await hashPassword(args.password),
       joinedAt: Date.now(),
@@ -69,7 +84,7 @@ export const registerUser = mutation({
     if (args.role === "cooperative") {
       await ctx.db.insert("koperasiProfiles", {
         adminId: userId,
-        name: args.name,
+        name,
         location: "Jawa Barat",
         createdAt: Date.now(),
       });
@@ -85,9 +100,15 @@ export const loginUser = mutation({
     password: v.string(),
   },
   handler: async (ctx, args) => {
+    const email = normalizeEmail(args.email);
+
+    if (!emailPattern.test(email)) {
+      throw new Error("Email atau password tidak valid.");
+    }
+
     const user = await ctx.db
       .query("users")
-      .withIndex("by_email", (q) => q.eq("email", args.email))
+      .withIndex("by_email", (q) => q.eq("email", email))
       .first();
 
     if (!user || user.passwordHash !== (await hashPassword(args.password))) {
@@ -254,4 +275,3 @@ export const getUserByToken = query({
     };
   },
 });
-

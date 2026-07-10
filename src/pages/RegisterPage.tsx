@@ -1,10 +1,19 @@
 import { useState } from 'react'
 import { useMutation } from 'convex/react'
+import toast from 'react-hot-toast'
 import { api } from '../../convex/_generated/api'
 import type { Page } from '../config/navigation'
 import BrandLoader from '../components/brand/brand-loader'
 import BrandLogo from '../components/brand/brand-logo'
 import { Building2, Briefcase, User, Mail, Lock, ArrowRight } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+
+const authIconClass = 'pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400'
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export function RegisterPage({ goToPage }: { goToPage: (page: Page) => void }) {
   const [name, setName] = useState('')
@@ -12,35 +21,37 @@ export function RegisterPage({ goToPage }: { goToPage: (page: Page) => void }) {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [role, setRole] = useState<'cooperative' | 'buyer'>('cooperative')
-  const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
   const registerUser = useMutation(api.auth.registerUser)
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
-    if (name.trim().length < 3 || !email.includes('@')) {
-      setMessage('Nama dan email harus valid.')
+    const normalizedName = name.trim()
+    const normalizedEmail = email.trim().toLowerCase()
+
+    if (normalizedName.length < 3 || !emailPattern.test(normalizedEmail)) {
+      toast.error('Nama dan email harus valid.')
       return
     }
     if (password.length < 6 || password !== confirmPassword) {
-      setMessage('Password minimal 6 karakter dan konfirmasi harus sama.')
+      toast.error('Password minimal 6 karakter dan konfirmasi harus sama.')
       return
     }
     setLoading(true)
-    setMessage('')
     try {
       await registerUser({
-        name,
-        email,
+        name: normalizedName,
+        email: normalizedEmail,
         password,
         role,
       })
-      setMessage('Akun berhasil terdaftar! Mengalihkan ke halaman masuk...')
+      toast.success('Akun berhasil terdaftar. Silakan masuk.')
       setTimeout(() => {
         goToPage('login')
       }, 1500)
     } catch (err) {
-      setMessage((err as Error).message || 'Gagal mendaftar. Silakan coba lagi.')
+      const message = (err as Error).message || ''
+      toast.error(message.includes('Email sudah terdaftar') ? 'Email sudah terdaftar.' : 'Gagal mendaftar. Silakan coba lagi.')
     } finally {
       setLoading(false)
     }
@@ -49,153 +60,145 @@ export function RegisterPage({ goToPage }: { goToPage: (page: Page) => void }) {
   return (
     <>
       {loading && <BrandLoader />}
-      <div className="flex flex-col items-center w-full mb-6 mt-4">
-        <div className="mb-4">
+      <Card className="w-full border-slate-200/80 shadow-xl shadow-slate-200/40">
+        <CardHeader className="items-center px-6 pb-5 pt-7 text-center sm:px-8">
           <BrandLogo height={44} />
-        </div>
-        <h1 className="!text-2xl !font-black !tracking-tight !text-slate-900 text-center !leading-snug !m-0">
-          Mulai Bersama Agrego
-        </h1>
-        <p className="!text-sm !text-slate-500 !mt-1.5 text-center !m-0 !leading-relaxed">
-          Satu platform terpadu untuk pengelola koperasi, anggota, dan mitra bisnis.
-        </p>
-      </div>
-
-      <div className="bg-white border border-slate-100 rounded-2xl shadow-xl shadow-slate-100/30 p-8 w-full flex flex-col gap-5">
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          
-          <div className="flex flex-col gap-2">
-            <span className="text-xs font-bold text-slate-700">Daftar Sebagai</span>
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                className={`flex flex-col items-start p-4 border rounded-xl transition-all duration-200 text-left cursor-pointer h-[155px] justify-between ${
-                  role === 'cooperative'
-                    ? 'border-[#168a6a] bg-[#f2f9f5] ring-2 ring-[#168a6a]/10'
-                    : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-slate-100/50'
-                }`}
-                onClick={() => setRole('cooperative')}
+          <CardTitle className="mt-3 text-2xl font-black leading-tight text-slate-950">
+            Mulai Bersama Agrego
+          </CardTitle>
+          <CardDescription className="max-w-sm text-base leading-relaxed">
+            Satu platform terpadu untuk pengelola koperasi, anggota, dan mitra bisnis.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="px-6 pb-6 sm:px-8">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <div className="grid gap-2">
+              <Label>Daftar Sebagai</Label>
+              <RadioGroup
+                value={role}
+                onValueChange={(value) => setRole(value as 'cooperative' | 'buyer')}
+                className="grid grid-cols-1 gap-3 sm:grid-cols-2"
               >
-                <div>
-                  <Building2 className={`w-5 h-5 mb-2 ${role === 'cooperative' ? 'text-[#168a6a]' : 'text-slate-400'}`} />
-                  <span className="text-xs font-black text-slate-900 block leading-tight">Koperasi (Produsen)</span>
-                </div>
-                <span className="text-[9px] text-slate-500 leading-normal block mt-1">
-                  Manajemen anggota, pencatatan setoran komoditas, verifikasi kualitas, dan bagi hasil otomatis.
-                </span>
-              </button>
-              <button
-                type="button"
-                className={`flex flex-col items-start p-4 border rounded-xl transition-all duration-200 text-left cursor-pointer h-[155px] justify-between ${
-                  role === 'buyer'
-                    ? 'border-[#168a6a] bg-[#f2f9f5] ring-2 ring-[#168a6a]/10'
-                    : 'border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-slate-100/50'
-                }`}
-                onClick={() => setRole('buyer')}
-              >
-                <div>
-                  <Briefcase className={`w-5 h-5 mb-2 ${role === 'buyer' ? 'text-[#168a6a]' : 'text-slate-400'}`} />
-                  <span className="text-xs font-black text-slate-900 block leading-tight">Mitra Buyer (Pembeli)</span>
-                </div>
-                <span className="text-[9px] text-slate-500 leading-normal block mt-1">
-                  Pembelian komoditas berkualitas tinggi langsung dari koperasi produsen, pemantauan alokasi, dan transparansi kontrak.
-                </span>
-              </button>
+                <Label
+                  htmlFor="role-cooperative"
+                  className={`flex min-h-36 cursor-pointer flex-col rounded-lg border p-4 transition-colors ${
+                    role === 'cooperative'
+                      ? 'border-emerald-700 bg-emerald-50 text-slate-950'
+                      : 'border-slate-200 bg-slate-50 text-slate-800 hover:border-slate-300'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <Building2 className={role === 'cooperative' ? 'h-5 w-5 text-emerald-700' : 'h-5 w-5 text-slate-400'} />
+                    <RadioGroupItem id="role-cooperative" value="cooperative" />
+                  </div>
+                  <span className="mt-3 text-sm font-black leading-tight">Koperasi (Produsen)</span>
+                  <span className="mt-3 text-xs font-normal leading-relaxed text-slate-500">
+                    Manajemen anggota, pencatatan setoran komoditas, verifikasi kualitas, dan bagi hasil otomatis.
+                  </span>
+                </Label>
+                <Label
+                  htmlFor="role-buyer"
+                  className={`flex min-h-36 cursor-pointer flex-col rounded-lg border p-4 transition-colors ${
+                    role === 'buyer'
+                      ? 'border-emerald-700 bg-emerald-50 text-slate-950'
+                      : 'border-slate-200 bg-slate-50 text-slate-800 hover:border-slate-300'
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <Briefcase className={role === 'buyer' ? 'h-5 w-5 text-emerald-700' : 'h-5 w-5 text-slate-400'} />
+                    <RadioGroupItem id="role-buyer" value="buyer" />
+                  </div>
+                  <span className="mt-3 text-sm font-black leading-tight">Mitra Buyer (Pembeli)</span>
+                  <span className="mt-3 text-xs font-normal leading-relaxed text-slate-500">
+                    Pembelian komoditas langsung dari koperasi produsen, pemantauan alokasi, dan transparansi kontrak.
+                  </span>
+                </Label>
+              </RadioGroup>
             </div>
-          </div>
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-bold text-slate-700">Nama Lengkap</label>
-            <div className="relative flex items-center">
-              <User className="absolute left-3.5 w-4 h-4 text-slate-400" />
-              <input
-                type="text"
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                placeholder="Masukkan nama lengkap Anda"
-                required
-                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-[#168a6a] focus:ring-4 focus:ring-[#168a6a]/10 transition-all duration-200"
-              />
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-bold text-slate-700">Alamat Email</label>
-            <div className="relative flex items-center">
-              <Mail className="absolute left-3.5 w-4 h-4 text-slate-400" />
-              <input
-                type="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                placeholder="Masukkan email aktif"
-                required
-                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-[#168a6a] focus:ring-4 focus:ring-[#168a6a]/10 transition-all duration-200"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-slate-700">Password</label>
-              <div className="relative flex items-center">
-                <Lock className="absolute left-3.5 w-4 h-4 text-slate-400" />
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                  placeholder="Min. 6 karakter"
+            <div className="grid gap-2">
+              <Label htmlFor="register-name">Nama Lengkap</Label>
+              <div className="relative">
+                <User className={authIconClass} />
+                <Input
+                  id="register-name"
+                  type="text"
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                  placeholder="Masukkan nama lengkap Anda"
                   required
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-[#168a6a] focus:ring-4 focus:ring-[#168a6a]/10 transition-all duration-200"
+                  className="h-12 bg-slate-50 pl-10"
                 />
               </div>
             </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-slate-700">Konfirmasi</label>
-              <div className="relative flex items-center">
-                <Lock className="absolute left-3.5 w-4 h-4 text-slate-400" />
-                <input
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(event) => setConfirmPassword(event.target.value)}
-                  placeholder="Ulangi password"
+
+            <div className="grid gap-2">
+              <Label htmlFor="register-email">Alamat Email</Label>
+              <div className="relative">
+                <Mail className={authIconClass} />
+                <Input
+                  id="register-email"
+                  type="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  placeholder="Masukkan email aktif"
                   required
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-[#168a6a] focus:ring-4 focus:ring-[#168a6a]/10 transition-all duration-200"
+                  className="h-12 bg-slate-50 pl-10"
                 />
               </div>
             </div>
-          </div>
 
-          {message ? (
-            <div className={`p-3 border rounded-xl text-xs font-semibold ${
-              message.includes('berhasil') 
-                ? 'bg-[#eefcf5] border-emerald-100 text-emerald-600' 
-                : 'bg-red-50 border-red-100 text-red-600'
-            }`}>
-              {message}
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="grid gap-2">
+                <Label htmlFor="register-password">Password</Label>
+                <div className="relative">
+                  <Lock className={authIconClass} />
+                  <Input
+                    id="register-password"
+                    type="password"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    placeholder="Min. 6 karakter"
+                    required
+                    className="h-12 bg-slate-50 pl-10"
+                  />
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="register-confirm-password">Konfirmasi</Label>
+                <div className="relative">
+                  <Lock className={authIconClass} />
+                  <Input
+                    id="register-confirm-password"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(event) => setConfirmPassword(event.target.value)}
+                    placeholder="Ulangi password"
+                    required
+                    className="h-12 bg-slate-50 pl-10"
+                  />
+                </div>
+              </div>
             </div>
-          ) : null}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full mt-2 py-3 bg-[#168a6a] hover:bg-[#116b52] disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-extrabold text-sm rounded-xl shadow-md shadow-[#168a6a]/10 transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer border-0"
-          >
-            Daftar Akun Baru
-            <ArrowRight className="w-4 h-4" />
-          </button>
-        </form>
-
-        <div className="flex justify-center items-center gap-1.5 text-xs text-slate-500 border-t border-slate-50 pt-4 mt-1">
+            <Button type="submit" disabled={loading} className="mt-1 h-11 w-full font-extrabold">
+              Daftar Akun Baru
+              <ArrowRight />
+            </Button>
+          </form>
+        </CardContent>
+        <CardFooter className="justify-center gap-1.5 border-t border-slate-100 px-6 py-4 text-sm text-slate-500">
           <span>Sudah memiliki akun?</span>
-          <button
+          <Button
             type="button"
+            variant="link"
             onClick={() => goToPage('login')}
-            className="font-bold text-[#168a6a] hover:underline cursor-pointer"
+            className="h-auto px-0 py-0 font-bold text-emerald-700"
           >
             Masuk Sekarang
-          </button>
-        </div>
-      </div>
+          </Button>
+        </CardFooter>
+      </Card>
     </>
   )
 }
