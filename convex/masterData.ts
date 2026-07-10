@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
 
 export const createMember = mutation({
   args: {
@@ -107,5 +107,45 @@ export const deleteCommodity = mutation({
   },
   handler: async (ctx, args) => {
     await ctx.db.delete(args.commodityId);
+  },
+});
+
+export const searchMembers = query({
+  args: {
+    koperasiId: v.id("koperasiProfiles"),
+    searchTerm: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const members = await ctx.db
+      .query("members")
+      .withIndex("by_koperasi", (q) => q.eq("koperasiId", args.koperasiId))
+      .collect();
+
+    const normalizedSearch = args.searchTerm.trim().toLowerCase();
+    if (!normalizedSearch) {
+      return members;
+    }
+
+    return members.filter((member) =>
+      member.name.toLowerCase().includes(normalizedSearch)
+    );
+  },
+});
+
+export const searchCommodities = query({
+  args: {
+    searchTerm: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const commodities = await ctx.db.query("commodities").collect();
+
+    const normalizedSearch = args.searchTerm.trim().toLowerCase();
+    if (!normalizedSearch) {
+      return commodities;
+    }
+
+    return commodities.filter((commodity) =>
+      commodity.name.toLowerCase().includes(normalizedSearch)
+    );
   },
 });

@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react'
 import './App.css'
+import { useQuery, useMutation } from 'convex/react'
+import { api } from '../convex/_generated/api'
 
 type Page =
   | 'dashboard'
@@ -143,6 +145,7 @@ type MockUser = {
   role: 'Admin' | 'Koperasi' | 'Buyer'
 }
 
+/*
 type MemberRecord = {
   name: string
   phone: string
@@ -150,6 +153,7 @@ type MemberRecord = {
   commodity: string
   status: 'Aktif' | 'Perlu Verifikasi'
 }
+*/
 
 const stockSummaries: StockSummary[] = [
   {
@@ -477,6 +481,7 @@ const profitShares: ProfitShareRecord[] = [
   },
 ]
 
+/*
 const members: MemberRecord[] = [
   {
     name: 'Ibu Sari Wulandari',
@@ -500,6 +505,7 @@ const members: MemberRecord[] = [
     status: 'Perlu Verifikasi',
   },
 ]
+*/
 
 const totalStock = stockSummaries.reduce((total, item) => total + item.totalKg, 0)
 const totalReady = stockSummaries.reduce((total, item) => total + item.readyKg, 0)
@@ -2915,16 +2921,39 @@ function ProfilePage({
   )
 }
 
+type MemberFormState = {
+  _id?: string
+  name: string
+  phone: string
+  village: string
+  primaryCommodityId: string
+}
+
 function MembersPage() {
-  const [memberList, setMemberList] = useState(members)
-  const [form, setForm] = useState<MemberRecord>(members[0])
-  const [saved, setSaved] = useState(false)
+  const defaultKoperasi = useQuery(api.koperasi.getDefaultKoperasi)
+  const koperasiId = defaultKoperasi?._id
+
+  const commodities = useQuery(api.masterData.searchCommodities, { searchTerm: '' })
+
   const [searchTerm, setSearchTerm] = useState('')
-  const filteredMembers = memberList.filter((member) =>
-    member.name.toLowerCase().includes(searchTerm.toLowerCase()),
+  const [saved, setSaved] = useState(false)
+  const [form, setForm] = useState<MemberFormState>({
+    name: '',
+    phone: '',
+    village: '',
+    primaryCommodityId: '',
+  })
+
+  const memberList = useQuery(
+    api.masterData.searchMembers,
+    koperasiId ? { koperasiId, searchTerm } : 'skip',
   )
 
-  function updateField(field: keyof Omit<MemberRecord, 'status'>, value: string) {
+  const createMember = useMutation(api.masterData.createMember)
+  const updateMember = useMutation(api.masterData.updateMember)
+  const deleteMember = useMutation(api.masterData.deleteMember)
+
+  function updateField(field: keyof MemberFormState, value: string) {
     setSaved(false)
     setForm((current) => ({ ...current, [field]: value }))
   }
@@ -2938,7 +2967,7 @@ function MembersPage() {
         </div>
         <div className="operator-panel">
           <span>Total anggota</span>
-          <strong>{memberList.length}</strong>
+          <strong>{memberList?.length ?? 0}</strong>
         </div>
       </header>
       <section className="panel">
@@ -2947,7 +2976,7 @@ function MembersPage() {
             <p className="eyebrow">Anggota Koperasi</p>
             <h2>Data petani penyetor</h2>
           </div>
-          <span>Data tiruan</span>
+          <span>Database Terkoneksi</span>
         </div>
         <div className="filter-row">
           <label>
@@ -2960,39 +2989,63 @@ function MembersPage() {
           </label>
         </div>
         <div className="candidate-list">
-          {filteredMembers.map((member) => (
-            <button
-              className="candidate-card"
-              key={member.phone}
-              type="button"
-              onClick={() => {
-                setForm(member)
-                setSaved(false)
-              }}
-            >
-              <div>
-                <strong>{member.name}</strong>
-                <span>{member.phone}</span>
-              </div>
-              <div>
-                <span>{member.village}</span>
-                <b>{member.commodity}</b>
-              </div>
-              <span className="status-pill">{member.status}</span>
-              <small
-                onClick={(event) => {
-                  event.stopPropagation()
-                  if (window.confirm(`Hapus ${member.name}?`)) {
-                    setMemberList((current) =>
-                      current.filter((item) => item.phone !== member.phone),
-                    )
-                  }
-                }}
-              >
-                Hapus
-              </small>
-            </button>
-          ))}
+          {memberList === undefined ? (
+            <p className="success-note">Memuat data anggota...</p>
+          ) : memberList.length === 0 ? (
+            <p className="success-note">Belum ada anggota terdaftar.</p>
+          ) : (
+            memberList.map((member) => {
+              const commodityName =
+                commodities?.find((c) => c._id === member.primaryCommodityId)?.name || '-'
+
+              return (
+                <button
+                  className="candidate-card"
+                  key={member._id}
+                  type="button"
+                  onClick={() => {
+                    setForm({
+                      _id: member._id,
+                      name: member.name,
+                      phone: member.phone,
+                      village: member.village || '',
+                      primaryCommodityId: member.primaryCommodityId || '',
+                    })
+                    setSaved(false)
+                  }}
+                >
+                  <div>
+                    <strong>{member.name}</strong>
+                    <span>{member.phone}</span>
+                  </div>
+                  <div>
+                    <span>{member.village || '-'}</span>
+                    <b>{commodityName}</b>
+                  </div>
+                  <span className="status-pill">
+                    {member.status === 'active' ? 'Aktif' : 'Perlu Verifikasi'}
+                  </span>
+                  <small
+                    onClick={async (event) => {
+                      event.stopPropagation()
+                      if (window.confirm(`Hapus ${member.name}?`)) {
+                        try {
+                          await deleteMember({ memberId: member._id })
+                          if (form._id === member._id) {
+                            setForm({ name: '', phone: '', village: '', primaryCommodityId: '' })
+                          }
+                        } catch (err) {
+                          alert('Gagal menghapus anggota: ' + (err as Error).message)
+                        }
+                      }
+                    }}
+                  >
+                    Hapus
+                  </small>
+                </button>
+              )
+            })
+          )}
         </div>
       </section>
       <section className="panel status-update-panel">
@@ -3002,9 +3055,40 @@ function MembersPage() {
         </div>
         <form
           className="deposit-form"
-          onSubmit={(event) => {
+          onSubmit={async (event) => {
             event.preventDefault()
-            setSaved(true)
+            if (!koperasiId) {
+              alert('Profil Koperasi belum siap.')
+              return
+            }
+
+            try {
+              if (form._id) {
+                await updateMember({
+                  memberId: form._id as any,
+                  name: form.name,
+                  phone: form.phone,
+                  village: form.village || undefined,
+                  primaryCommodityId: form.primaryCommodityId
+                    ? (form.primaryCommodityId as any)
+                    : undefined,
+                })
+              } else {
+                await createMember({
+                  koperasiId,
+                  name: form.name,
+                  phone: form.phone,
+                  village: form.village || undefined,
+                  primaryCommodityId: form.primaryCommodityId
+                    ? (form.primaryCommodityId as any)
+                    : undefined,
+                })
+              }
+              setSaved(true)
+              setForm({ name: '', phone: '', village: '', primaryCommodityId: '' })
+            } catch (err) {
+              alert('Gagal menyimpan data: ' + (err as Error).message)
+            }
           }}
         >
           <div className="form-grid">
@@ -3013,6 +3097,7 @@ function MembersPage() {
               <input
                 value={form.name}
                 onChange={(event) => updateField('name', event.target.value)}
+                required
               />
             </label>
             <label>
@@ -3020,6 +3105,7 @@ function MembersPage() {
               <input
                 value={form.phone}
                 onChange={(event) => updateField('phone', event.target.value)}
+                required
               />
             </label>
           </div>
@@ -3034,35 +3120,70 @@ function MembersPage() {
             <label>
               <span>Komoditas</span>
               <select
-                value={form.commodity}
-                onChange={(event) => updateField('commodity', event.target.value)}
+                value={form.primaryCommodityId}
+                onChange={(event) => updateField('primaryCommodityId', event.target.value)}
               >
-                {commodityOptions.map((commodity) => (
-                  <option key={commodity}>{commodity}</option>
+                <option value="">Pilih Komoditas</option>
+                {commodities?.map((commodity) => (
+                  <option key={commodity._id} value={commodity._id}>
+                    {commodity.name}
+                  </option>
                 ))}
               </select>
             </label>
           </div>
-          <button className="primary-action" type="submit">
-            Simpan Anggota
-          </button>
-          {saved ? <p className="success-note">Data anggota mock tersimpan.</p> : null}
+          <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+            <button className="primary-action" type="submit">
+              {form._id ? 'Simpan Perubahan' : 'Tambah Anggota'}
+            </button>
+            {form._id || form.name || form.phone || form.village || form.primaryCommodityId ? (
+              <button
+                className="text-action"
+                type="button"
+                onClick={() => {
+                  setForm({ name: '', phone: '', village: '', primaryCommodityId: '' })
+                  setSaved(false)
+                }}
+              >
+                Batal
+              </button>
+            ) : null}
+          </div>
+          {saved ? <p className="success-note">Data anggota berhasil disimpan.</p> : null}
         </form>
       </section>
     </>
   )
 }
 
+type CommodityFormState = {
+  _id?: string
+  name: string
+  unit: string
+  minimumQualityScore: number
+  qualityParameters: string
+}
+
 function CommoditiesPage() {
-  const [commodityList, setCommodityList] = useState(commodityOptions)
   const [searchTerm, setSearchTerm] = useState('')
-  const [name, setName] = useState(commodityOptions[0])
-  const [minimumQuality, setMinimumQuality] = useState('85')
-  const [parameters, setParameters] = useState('Kadar air, grade, kerusakan')
   const [saved, setSaved] = useState(false)
-  const filteredCommodities = commodityList.filter((commodity) =>
-    commodity.toLowerCase().includes(searchTerm.toLowerCase()),
-  )
+  const [form, setForm] = useState<CommodityFormState>({
+    name: '',
+    unit: 'kg',
+    minimumQualityScore: 85,
+    qualityParameters: 'Kadar air, grade, kerusakan',
+  })
+
+  const commodityList = useQuery(api.masterData.searchCommodities, { searchTerm })
+
+  const createCommodity = useMutation(api.masterData.createCommodity)
+  const updateCommodity = useMutation(api.masterData.updateCommodity)
+  const deleteCommodity = useMutation(api.masterData.deleteCommodity)
+
+  function updateField(field: keyof CommodityFormState, value: any) {
+    setSaved(false)
+    setForm((current) => ({ ...current, [field]: value }))
+  }
 
   return (
     <>
@@ -3073,45 +3194,79 @@ function CommoditiesPage() {
         </div>
         <div className="operator-panel">
           <span>Total komoditas</span>
-          <strong>{commodityList.length}</strong>
+          <strong>{commodityList?.length ?? 0}</strong>
         </div>
       </header>
       <section className="pool-grid">
-        {filteredCommodities.map((commodity, index) => (
-          <article className="pool-card" key={commodity}>
-            <div>
-              <span>KMD-00{index + 1}</span>
-              <strong>{commodity}</strong>
-            </div>
-            <dl>
+        {commodityList === undefined ? (
+          <p className="success-note">Memuat data komoditas...</p>
+        ) : commodityList.length === 0 ? (
+          <p className="success-note">Belum ada komoditas terdaftar.</p>
+        ) : (
+          commodityList.map((commodity) => (
+            <article className="pool-card" key={commodity._id}>
               <div>
-                <dt>Unit</dt>
-                <dd>kg</dd>
+                <span>{commodity._id}</span>
+                <strong>{commodity.name}</strong>
               </div>
-              <div>
-                <dt>Minimum QS</dt>
-                <dd>{82 + index * 3}</dd>
+              <dl>
+                <div>
+                  <dt>Unit</dt>
+                  <dd>{commodity.unit}</dd>
+                </div>
+                <div>
+                  <dt>Minimum QS</dt>
+                  <dd>{commodity.minimumQualityScore}</dd>
+                </div>
+                <div>
+                  <dt>Parameter</dt>
+                  <dd>{commodity.qualityParameters.join(', ')}</dd>
+                </div>
+              </dl>
+              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                <button
+                  className="text-action"
+                  type="button"
+                  onClick={() => {
+                    setForm({
+                      _id: commodity._id,
+                      name: commodity.name,
+                      unit: commodity.unit,
+                      minimumQualityScore: commodity.minimumQualityScore,
+                      qualityParameters: commodity.qualityParameters.join(', '),
+                    })
+                    setSaved(false)
+                  }}
+                >
+                  Ubah
+                </button>
+                <button
+                  className="text-action text-danger"
+                  type="button"
+                  onClick={async () => {
+                    if (window.confirm(`Hapus ${commodity.name}?`)) {
+                      try {
+                        await deleteCommodity({ commodityId: commodity._id })
+                        if (form._id === commodity._id) {
+                          setForm({
+                            name: '',
+                            unit: 'kg',
+                            minimumQualityScore: 85,
+                            qualityParameters: '',
+                          })
+                        }
+                      } catch (err) {
+                        alert('Gagal menghapus komoditas: ' + (err as Error).message)
+                      }
+                    }
+                  }}
+                >
+                  Hapus
+                </button>
               </div>
-              <div>
-                <dt>Parameter</dt>
-                <dd>Kadar air, grade, kerusakan</dd>
-              </div>
-            </dl>
-            <button
-              className="text-action"
-              type="button"
-              onClick={() => {
-                if (window.confirm(`Hapus ${commodity}?`)) {
-                  setCommodityList((current) =>
-                    current.filter((item) => item !== commodity),
-                  )
-                }
-              }}
-            >
-              Hapus
-            </button>
-          </article>
-        ))}
+            </article>
+          ))
+        )}
       </section>
       <section className="panel status-update-panel">
         <div className="filter-row">
@@ -3130,15 +3285,50 @@ function CommoditiesPage() {
         </div>
         <form
           className="deposit-form"
-          onSubmit={(event) => {
+          onSubmit={async (event) => {
             event.preventDefault()
-            setSaved(true)
+            const paramsArray = form.qualityParameters
+              .split(',')
+              .map((p) => p.trim())
+              .filter(Boolean)
+
+            try {
+              if (form._id) {
+                await updateCommodity({
+                  commodityId: form._id as any,
+                  name: form.name,
+                  unit: form.unit,
+                  minimumQualityScore: Number(form.minimumQualityScore),
+                  qualityParameters: paramsArray,
+                })
+              } else {
+                await createCommodity({
+                  name: form.name,
+                  unit: form.unit,
+                  minimumQualityScore: Number(form.minimumQualityScore),
+                  qualityParameters: paramsArray,
+                })
+              }
+              setSaved(true)
+              setForm({
+                name: '',
+                unit: 'kg',
+                minimumQualityScore: 85,
+                qualityParameters: 'Kadar air, grade, kerusakan',
+              })
+            } catch (err) {
+              alert('Gagal menyimpan data: ' + (err as Error).message)
+            }
           }}
         >
           <div className="form-grid">
             <label>
               <span>Nama Komoditas</span>
-              <input value={name} onChange={(event) => setName(event.target.value)} />
+              <input
+                value={form.name}
+                onChange={(event) => updateField('name', event.target.value)}
+                required
+              />
             </label>
             <label>
               <span>Minimum QS</span>
@@ -3146,23 +3336,54 @@ function CommoditiesPage() {
                 max="100"
                 min="0"
                 type="number"
-                value={minimumQuality}
-                onChange={(event) => setMinimumQuality(event.target.value)}
+                value={form.minimumQualityScore}
+                onChange={(event) => updateField('minimumQualityScore', Number(event.target.value))}
+                required
               />
             </label>
           </div>
-          <label>
-            <span>Parameter Kualitas</span>
-            <textarea
-              rows={3}
-              value={parameters}
-              onChange={(event) => setParameters(event.target.value)}
-            />
-          </label>
-          <button className="primary-action" type="submit">
-            Simpan Komoditas
-          </button>
-          {saved ? <p className="success-note">Komoditas mock tersimpan.</p> : null}
+          <div className="form-grid">
+            <label>
+              <span>Unit</span>
+              <input
+                value={form.unit}
+                onChange={(event) => updateField('unit', event.target.value)}
+                required
+              />
+            </label>
+            <label>
+              <span>Parameter Kualitas (pisahkan dengan koma)</span>
+              <input
+                value={form.qualityParameters}
+                onChange={(event) => updateField('qualityParameters', event.target.value)}
+                placeholder="Kadar air, grade, kerusakan"
+                required
+              />
+            </label>
+          </div>
+          <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+            <button className="primary-action" type="submit">
+              {form._id ? 'Simpan Perubahan' : 'Tambah Komoditas'}
+            </button>
+            {form._id || form.name || form.unit !== 'kg' || form.minimumQualityScore !== 85 ? (
+              <button
+                className="text-action"
+                type="button"
+                onClick={() => {
+                  setForm({
+                    name: '',
+                    unit: 'kg',
+                    minimumQualityScore: 85,
+                    qualityParameters: 'Kadar air, grade, kerusakan',
+                  })
+                  setSaved(false)
+                }}
+              >
+                Batal
+              </button>
+            ) : null}
+          </div>
+          {saved ? <p className="success-note">Data komoditas berhasil disimpan.</p> : null}
         </form>
       </section>
     </>
@@ -3171,63 +3392,146 @@ function CommoditiesPage() {
 
 function CooperativeProfilePage() {
   const [isEditing, setIsEditing] = useState(false)
-  const [profile, setProfile] = useState({
-    name: 'Koperasi Tani Makmur',
-    address: 'Jl. Desa Agri No. 12, Kabupaten Bandung',
-    contact: 'koperasi@tanmakmur.id / 022-7788-9900',
-    leader: 'Ibu Ratna Permata',
+  const defaultKoperasi = useQuery(api.koperasi.getDefaultKoperasi)
+  const saveDefaultKoperasi = useMutation(api.koperasi.saveDefaultKoperasi)
+
+  const memberList = useQuery(
+    api.masterData.searchMembers,
+    defaultKoperasi?._id ? { koperasiId: defaultKoperasi._id, searchTerm: '' } : 'skip',
+  )
+  const commodityList = useQuery(api.masterData.searchCommodities, { searchTerm: '' })
+
+  const [form, setForm] = useState({
+    name: '',
+    location: '',
+    address: '',
+    contactEmail: '',
+    contactPhone: '',
+    leaderName: '',
   })
+
+  const activeProfile = defaultKoperasi || {
+    name: 'Koperasi Tani Makmur',
+    location: 'Jawa Barat',
+    address: 'Jl. Desa Agri No. 12, Kabupaten Bandung',
+    contactEmail: 'koperasi@tanmakmur.id',
+    contactPhone: '022-7788-9900',
+    leaderName: 'Ibu Ratna Permata',
+  }
+
+  const startEditing = () => {
+    setForm({
+      name: activeProfile.name,
+      location: activeProfile.location,
+      address: activeProfile.address || '',
+      contactEmail: activeProfile.contactEmail || '',
+      contactPhone: activeProfile.contactPhone || '',
+      leaderName: activeProfile.leaderName || '',
+    })
+    setIsEditing(true)
+  }
 
   return (
     <>
       <header className="topbar">
         <div>
           <p className="eyebrow">AGREGO / Data Master</p>
-          <h1>Profil {profile.name}</h1>
+          <h1>Profil {activeProfile.name}</h1>
         </div>
         <div className="operator-panel">
           <span>Wilayah</span>
-          <strong>Jawa Barat</strong>
+          <strong>{activeProfile.location}</strong>
         </div>
       </header>
       <section className="detail-layout">
         <article className="panel qc-detail-card">
           <div className="section-heading">
             <p className="eyebrow">Identitas</p>
-            <h2>{profile.name}</h2>
+            <h2>{activeProfile.name}</h2>
           </div>
           {isEditing ? (
             <form
               className="deposit-form"
-              onSubmit={(event) => {
+              onSubmit={async (event) => {
                 event.preventDefault()
-                setIsEditing(false)
+                try {
+                  await saveDefaultKoperasi({
+                    name: form.name,
+                    location: form.location,
+                    address: form.address || undefined,
+                    contactEmail: form.contactEmail || undefined,
+                    contactPhone: form.contactPhone || undefined,
+                    leaderName: form.leaderName || undefined,
+                  })
+                  setIsEditing(false)
+                } catch (err) {
+                  alert('Gagal menyimpan profil: ' + (err as Error).message)
+                }
               }}
             >
-              <label>
-                <span>Nama</span>
-                <input
-                  value={profile.name}
-                  onChange={(event) =>
-                    setProfile((current) => ({
-                      ...current,
-                      name: event.target.value,
-                    }))
-                  }
-                />
-              </label>
-              <label>
-                <span>Alamat</span>
-                <input
-                  value={profile.address}
-                  onChange={(event) =>
-                    setProfile((current) => ({
-                      ...current,
-                      address: event.target.value,
-                    }))
-                  }
-                />
-              </label>
+              <div className="form-grid">
+                <label>
+                  <span>Nama Koperasi</span>
+                  <input
+                    value={form.name}
+                    onChange={(event) =>
+                      setForm((current) => ({ ...current, name: event.target.value }))
+                    }
+                    required
+                  />
+                </label>
+                <label>
+                  <span>Wilayah</span>
+                  <input
+                    value={form.location}
+                    onChange={(event) =>
+                      setForm((current) => ({ ...current, location: event.target.value }))
+                    }
+                    required
+                  />
+                </label>
+              </div>
+              <div className="form-grid">
+                <label>
+                  <span>Alamat</span>
+                  <input
+                    value={form.address}
+                    onChange={(event) =>
+                      setForm((current) => ({ ...current, address: event.target.value }))
+                    }
+                  />
+                </label>
+                <label>
+                  <span>Nama Ketua</span>
+                  <input
+                    value={form.leaderName}
+                    onChange={(event) =>
+                      setForm((current) => ({ ...current, leaderName: event.target.value }))
+                    }
+                  />
+                </label>
+              </div>
+              <div className="form-grid">
+                <label>
+                  <span>Email Kontak</span>
+                  <input
+                    type="email"
+                    value={form.contactEmail}
+                    onChange={(event) =>
+                      setForm((current) => ({ ...current, contactEmail: event.target.value }))
+                    }
+                  />
+                </label>
+                <label>
+                  <span>Telepon Kontak</span>
+                  <input
+                    value={form.contactPhone}
+                    onChange={(event) =>
+                      setForm((current) => ({ ...current, contactPhone: event.target.value }))
+                    }
+                  />
+                </label>
+              </div>
               <button className="primary-action" type="submit">
                 Simpan Profil
               </button>
@@ -3236,22 +3540,32 @@ function CooperativeProfilePage() {
             <dl className="detail-metrics single">
               <div>
                 <dt>Alamat</dt>
-                <dd>{profile.address}</dd>
+                <dd>{activeProfile.address || '-'}</dd>
               </div>
               <div>
                 <dt>Kontak</dt>
-                <dd>{profile.contact}</dd>
+                <dd>
+                  {activeProfile.contactEmail || activeProfile.contactPhone
+                    ? `${activeProfile.contactEmail || '-'} / ${activeProfile.contactPhone || '-'}`
+                    : '-'}
+                </dd>
               </div>
               <div>
                 <dt>Ketua</dt>
-                <dd>{profile.leader}</dd>
+                <dd>{activeProfile.leaderName || '-'}</dd>
               </div>
             </dl>
           )}
           <button
             className="text-action"
             type="button"
-            onClick={() => setIsEditing((current) => !current)}
+            onClick={() => {
+              if (isEditing) {
+                setIsEditing(false)
+              } else {
+                startEditing()
+              }
+            }}
           >
             {isEditing ? 'Batal Edit' : 'Edit Profil'}
           </button>
@@ -3264,11 +3578,11 @@ function CooperativeProfilePage() {
           <div className="parameter-grid">
             <div>
               <span>Anggota</span>
-              <strong>{members.length}</strong>
+              <strong>{memberList?.length ?? 0}</strong>
             </div>
             <div>
               <span>Komoditas</span>
-              <strong>{commodityOptions.length}</strong>
+              <strong>{commodityList?.length ?? 0}</strong>
             </div>
           </div>
         </article>
