@@ -1,33 +1,33 @@
 import { useState } from 'react'
+import { useMutation, useQuery } from 'convex/react'
+import { api } from '../../convex/_generated/api'
+import type { Page } from '../config/navigation'
 import PageHeader from '../components/layout/page-header'
 import NumberUnitInput from '../components/forms/number-unit-input'
 import {
-  type DepositRecord,
-  type DepositFormState,
   type DepositFormErrors,
-  memberOptions,
-  commodityOptions,
-  collectorOptions,
+  type DepositFormState,
   validateDepositForm,
 } from './shared'
 
-export function NewDepositPage({
-  onSave,
-}: {
-  onSave: (record: DepositRecord) => void
-}) {
+export function NewDepositPage({ goToPage }: { goToPage: (page: Page) => void }) {
+  const defaultKoperasi = useQuery(api.koperasi.getDefaultKoperasi)
+  const koperasiId = defaultKoperasi?._id
+  const members = useQuery(api.masterData.searchMembers, koperasiId ? { koperasiId, searchTerm: '' } : 'skip')
+  const commodities = useQuery(api.masterData.searchCommodities, { searchTerm: '' })
+  const createDeposit = useMutation(api.deposits.createDeposit)
   const [form, setForm] = useState<DepositFormState>({
-    member: memberOptions[0],
-    commodity: commodityOptions[0],
-    weightKg: '250',
-    submittedAt: '2026-07-10',
-    collector: collectorOptions[0],
-    origin: 'Dusun Cibuntu',
+    memberId: '',
+    commodityId: '',
+    weightKg: '',
+    submittedAt: '',
+    collector: '',
+    origin: '',
     notes: '',
   })
   const [saved, setSaved] = useState(false)
   const [errors, setErrors] = useState<DepositFormErrors>({})
-  const estimatedQueue = form.commodity === 'Kopi Robusta' ? 'QC Kopi' : 'QC Umum'
+  const canSubmit = Boolean(koperasiId && members?.length && commodities?.length)
 
   function updateField(field: keyof DepositFormState, value: string) {
     setSaved(false)
@@ -36,192 +36,156 @@ export function NewDepositPage({
       delete next[field]
       return next
     })
-    setForm((current) => ({
-      ...current,
-      [field]: value,
-    }))
+    setForm((current) => ({ ...current, [field]: value }))
   }
 
   return (
     <>
-      <PageHeader
-        title="Form Setoran Baru"
-        subtitle={`Antrean Pemeriksaan: ${estimatedQueue}`}
-      />
+      <PageHeader title="Form Setoran Baru" subtitle="Data setoran tersimpan ke Convex" />
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 0.6fr', gap: '20px', alignItems: 'start' }} className="form-workspace">
+      <div className="grid gap-5 lg:grid-cols-[1.4fr_0.6fr] lg:items-start">
         <form
-          className="dashboard-panel"
-          onSubmit={(event) => {
+          className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+          onSubmit={async (event) => {
             event.preventDefault()
             const nextErrors = validateDepositForm(form)
             setErrors(nextErrors)
-            if (Object.keys(nextErrors).length > 0) {
+            if (Object.keys(nextErrors).length > 0 || !koperasiId) {
               setSaved(false)
               return
             }
-            onSave({
-              id: `STR-${Date.now().toString().slice(-6)}`,
-              member: form.member,
-              commodity: form.commodity,
+
+            await createDeposit({
+              koperasiId,
+              memberId: form.memberId as any,
+              commodityId: form.commodityId as any,
+              depositNumber: `STR-${Date.now()}`,
               weightKg: Number(form.weightKg),
-              submittedAt: form.submittedAt,
-              qualityScore: null,
-              status: 'Tercatat',
-              collector: form.collector,
-              phone: '0812-4400-0000',
+              submittedAt: new Date(form.submittedAt).getTime(),
               origin: form.origin,
-              notes:
-                form.notes.trim() ||
-                'Setoran baru tersimpan dan siap masuk antrean Quality Check.',
+              collectorName: form.collector,
+              notes: form.notes.trim() || undefined,
             })
             setSaved(true)
+            goToPage('deposits')
           }}
-          style={{ gap: '16px' }}
         >
-          <div className="panel-title-container">
-            <span className="panel-eyebrow">Input Setoran</span>
-            <h2 className="panel-title">Data panen anggota</h2>
+          <div className="grid gap-1 [&_h2]:text-lg [&_h2]:font-black [&_h2]:text-slate-950">
+            <span className="text-xs font-black uppercase tracking-[0.16em] text-emerald-700">Input Setoran</span>
+            <h2 className="text-lg font-black text-slate-950">Data panen anggota</h2>
           </div>
 
-          <div className="form-field-container">
-            <label className="form-field-label">Nama Anggota</label>
+          {!koperasiId ? (
+            <p className="text-sm font-bold text-emerald-700">Profil koperasi belum tersedia.</p>
+          ) : null}
+
+          <div className="grid gap-2">
+            <label className="text-sm font-bold text-slate-700">Nama Anggota</label>
             <select
-              className="form-select-control"
-              aria-invalid={Boolean(errors.member)}
-              value={form.member}
-              onChange={(event) => updateField('member', event.target.value)}
+              className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
+              aria-invalid={Boolean(errors.memberId)}
+              value={form.memberId}
+              onChange={(event) => updateField('memberId', event.target.value)}
             >
-              {memberOptions.map((member) => (
-                <option key={member}>{member}</option>
+              <option value="">Pilih anggota</option>
+              {members?.map((member) => (
+                <option key={member._id} value={member._id}>{member.name}</option>
               ))}
             </select>
-            {errors.member ? <small className="form-field-error">{errors.member}</small> : null}
+            {errors.memberId ? <small className="text-xs font-semibold text-rose-600">{errors.memberId}</small> : null}
           </div>
 
-          <div className="form-field-container">
-            <label className="form-field-label">Komoditas</label>
+          <div className="grid gap-2">
+            <label className="text-sm font-bold text-slate-700">Komoditas</label>
             <select
-              className="form-select-control"
-              aria-invalid={Boolean(errors.commodity)}
-              value={form.commodity}
-              onChange={(event) => updateField('commodity', event.target.value)}
+              className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
+              aria-invalid={Boolean(errors.commodityId)}
+              value={form.commodityId}
+              onChange={(event) => updateField('commodityId', event.target.value)}
             >
-              {commodityOptions.map((commodity) => (
-                <option key={commodity}>{commodity}</option>
+              <option value="">Pilih komoditas</option>
+              {commodities?.map((commodity) => (
+                <option key={commodity._id} value={commodity._id}>{commodity.name}</option>
               ))}
             </select>
-            {errors.commodity ? (
-              <small className="form-field-error">{errors.commodity}</small>
-            ) : null}
+            {errors.commodityId ? <small className="text-xs font-semibold text-rose-600">{errors.commodityId}</small> : null}
           </div>
 
-          <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
-            <NumberUnitInput
-              id="weightKg"
-              label="Berat Setoran"
-              unit="kg"
-              value={form.weightKg}
-              onChange={(val) => updateField('weightKg', val)}
-              error={errors.weightKg}
-              min="1"
-            />
-            
-            <div className="form-field-container">
-              <label className="form-field-label">Tanggal Setor</label>
+          <div className="grid gap-4 sm:grid-cols-2 [&_label]:grid [&_label]:gap-2 [&_label>span]:text-sm [&_label>span]:font-bold [&_label>span]:text-slate-700 [&_input]:h-11 [&_input]:rounded-lg [&_input]:border [&_input]:border-slate-200 [&_input]:bg-white [&_input]:px-3 [&_input]:text-sm [&_input]:font-semibold [&_input]:outline-none [&_input:focus]:border-emerald-500 [&_input:focus]:ring-4 [&_input:focus]:ring-emerald-100">
+            <NumberUnitInput id="weightKg" label="Berat Setoran" unit="kg" value={form.weightKg} onChange={(val) => updateField('weightKg', val)} error={errors.weightKg} min="1" />
+            <div className="grid gap-2">
+              <label className="text-sm font-bold text-slate-700">Tanggal Setor</label>
               <input
-                className="form-input-control"
+                className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
                 aria-invalid={Boolean(errors.submittedAt)}
                 type="date"
                 value={form.submittedAt}
-                onChange={(event) =>
-                  updateField('submittedAt', event.target.value)
-                }
+                onChange={(event) => updateField('submittedAt', event.target.value)}
               />
-              {errors.submittedAt ? (
-                <small className="form-field-error">{errors.submittedAt}</small>
-              ) : null}
+              {errors.submittedAt ? <small className="text-xs font-semibold text-rose-600">{errors.submittedAt}</small> : null}
             </div>
           </div>
 
-          <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
-            <div className="form-field-container">
-              <label className="form-field-label">Petugas Penerima</label>
-              <select
-                className="form-select-control"
+          <div className="grid gap-4 sm:grid-cols-2 [&_label]:grid [&_label]:gap-2 [&_label>span]:text-sm [&_label>span]:font-bold [&_label>span]:text-slate-700 [&_input]:h-11 [&_input]:rounded-lg [&_input]:border [&_input]:border-slate-200 [&_input]:bg-white [&_input]:px-3 [&_input]:text-sm [&_input]:font-semibold [&_input]:outline-none [&_input:focus]:border-emerald-500 [&_input:focus]:ring-4 [&_input:focus]:ring-emerald-100">
+            <div className="grid gap-2">
+              <label className="text-sm font-bold text-slate-700">Petugas Penerima</label>
+              <input
+                className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
                 aria-invalid={Boolean(errors.collector)}
                 value={form.collector}
                 onChange={(event) => updateField('collector', event.target.value)}
-              >
-                {collectorOptions.map((collector) => (
-                  <option key={collector}>{collector}</option>
-                ))}
-              </select>
-              {errors.collector ? (
-                <small className="form-field-error">{errors.collector}</small>
-              ) : null}
+              />
+              {errors.collector ? <small className="text-xs font-semibold text-rose-600">{errors.collector}</small> : null}
             </div>
-            
-            <div className="form-field-container">
-              <label className="form-field-label">Asal Dusun</label>
+            <div className="grid gap-2">
+              <label className="text-sm font-bold text-slate-700">Asal Dusun</label>
               <input
-                className="form-input-control"
+                className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
                 aria-invalid={Boolean(errors.origin)}
                 value={form.origin}
                 onChange={(event) => updateField('origin', event.target.value)}
               />
-              {errors.origin ? (
-                <small className="form-field-error">{errors.origin}</small>
-              ) : null}
+              {errors.origin ? <small className="text-xs font-semibold text-rose-600">{errors.origin}</small> : null}
             </div>
           </div>
 
-          <div className="form-field-container">
-            <label className="form-field-label">Catatan Awal</label>
+          <div className="grid gap-2">
+            <label className="text-sm font-bold text-slate-700">Catatan Awal</label>
             <textarea
-              className="form-textarea-control"
-              aria-invalid={Boolean(errors.notes)}
+              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm font-semibold text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
               rows={4}
               value={form.notes}
               onChange={(event) => updateField('notes', event.target.value)}
-              placeholder="Mis. kondisi kemasan, kadar kering awal, atau antrean QC."
+              placeholder="Catatan kondisi setoran"
             />
-            {errors.notes ? <small className="form-field-error">{errors.notes}</small> : null}
           </div>
 
-          <button className="btn-primary" type="submit" style={{ width: '100%' }}>
-            Simpan Draft Setoran
+          <button className="w-full rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-black text-white shadow-sm transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50" disabled={!canSubmit} type="submit">
+            Simpan Setoran
           </button>
+          {!canSubmit ? <p className="text-xs font-bold text-slate-500">Tambahkan profil koperasi, anggota, dan komoditas sebelum membuat setoran.</p> : null}
         </form>
 
-        <aside className="dashboard-panel" aria-label="Preview setoran">
-          <div className="panel-title-container">
-            <span className="panel-eyebrow">Preview</span>
-            <h2 className="panel-title">Ringkasan setoran</h2>
+        <aside className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm" aria-label="Preview setoran">
+          <div className="grid gap-1 [&_h2]:text-lg [&_h2]:font-black [&_h2]:text-slate-950">
+            <span className="text-xs font-black uppercase tracking-[0.16em] text-emerald-700">Preview</span>
+            <h2 className="text-lg font-black text-slate-950">Ringkasan setoran</h2>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '12px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: '8px' }}>
-              <span style={{ fontSize: '12px', color: 'var(--muted)' }}>Anggota</span>
-              <strong style={{ fontSize: '13px', color: 'var(--text-strong)' }}>{form.member}</strong>
+          <div className="mt-3 grid gap-3">
+            <div className="flex justify-between gap-3 border-b border-slate-200 pb-2">
+              <span className="text-xs font-semibold text-slate-500">Anggota</span>
+              <strong className="text-right text-sm font-black text-slate-950">{members?.find((member) => member._id === form.memberId)?.name || '-'}</strong>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: '8px' }}>
-              <span style={{ fontSize: '12px', color: 'var(--muted)' }}>Komoditas</span>
-              <strong style={{ fontSize: '13px', color: 'var(--text-strong)' }}>{form.commodity}</strong>
+            <div className="flex justify-between gap-3 border-b border-slate-200 pb-2">
+              <span className="text-xs font-semibold text-slate-500">Komoditas</span>
+              <strong className="text-right text-sm font-black text-slate-950">{commodities?.find((commodity) => commodity._id === form.commodityId)?.name || '-'}</strong>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: '8px' }}>
-              <span style={{ fontSize: '12px', color: 'var(--muted)' }}>Berat</span>
-              <strong style={{ fontSize: '13px', color: 'var(--text-strong)' }}>{form.weightKg || '0'} kg</strong>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '8px' }}>
-              <span style={{ fontSize: '12px', color: 'var(--muted)' }}>Status Awal</span>
-              <strong style={{ fontSize: '13px', color: 'var(--primary)' }}>Tercatat</strong>
+            <div className="flex justify-between gap-3 border-b border-slate-200 pb-2">
+              <span className="text-xs font-semibold text-slate-500">Berat</span>
+              <strong className="text-right text-sm font-black text-slate-950">{form.weightKg || '0'} kg</strong>
             </div>
           </div>
-          {saved ? (
-            <p style={{ marginTop: '12px', fontSize: '12px', color: 'var(--primary)', fontWeight: 600 }}>
-              Draft setoran siap masuk riwayat dan antrean Quality Check.
-            </p>
-          ) : null}
+          {saved ? <p className="mt-3 text-xs font-bold text-emerald-700">Setoran tersimpan.</p> : null}
         </aside>
       </div>
     </>

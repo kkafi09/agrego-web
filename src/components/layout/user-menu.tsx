@@ -37,31 +37,31 @@ export default function UserMenu({ user, onPageChange, onLogout }: UserMenuProps
   }
 
   return (
-    <div className="user-menu-container" ref={menuRef}>
+    <div className="relative" ref={menuRef}>
       <button
-        className="user-menu-trigger"
+        className="flex h-10 items-center gap-2 rounded-lg border border-slate-200 bg-white py-1.5 pl-1.5 pr-3 text-sm font-bold text-slate-700 shadow-sm transition hover:bg-slate-50"
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         aria-haspopup="true"
         aria-expanded={isOpen}
       >
-        <div className="header-avatar" aria-hidden="true">
+        <div className="flex h-7 w-7 items-center justify-center rounded-md bg-emerald-700 text-xs font-black text-white" aria-hidden="true">
           {getInitials(user.name)}
         </div>
-        <span className="header-username">{user.name}</span>
-        <ChevronDown size={14} className="header-chevron" />
+        <span className="hidden max-w-36 truncate xl:inline">{user.name}</span>
+        <ChevronDown size={14} className="text-slate-400" />
       </button>
 
       {isOpen && (
-        <div className="header-dropdown-menu" role="menu">
-          <div className="dropdown-user-info">
-            <span className="dropdown-name">{user.name}</span>
-            <span className="dropdown-email">{user.email}</span>
-            <span className="dropdown-role">{user.role}</span>
+        <div className="absolute right-0 top-12 z-50 w-64 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl" role="menu">
+          <div className="grid gap-1 p-4">
+            <span className="truncate text-sm font-black text-slate-950">{user.name}</span>
+            <span className="truncate text-xs font-medium text-slate-500">{user.email}</span>
+            <span className="mt-1 w-fit rounded-full bg-emerald-50 px-2 py-1 text-xs font-bold text-emerald-700">{user.role}</span>
           </div>
-          <div className="dropdown-divider" />
+          <div className="h-px bg-slate-100" />
           <button
-            className="dropdown-item"
+            className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm font-bold text-slate-700 transition hover:bg-slate-50"
             role="menuitem"
             type="button"
             onClick={() => {
@@ -72,9 +72,9 @@ export default function UserMenu({ user, onPageChange, onLogout }: UserMenuProps
             <User size={14} />
             <span>Profil Saya</span>
           </button>
-          <div className="dropdown-divider" />
+          <div className="h-px bg-slate-100" />
           <button
-            className="dropdown-item text-danger"
+            className="flex w-full items-center gap-2 px-4 py-3 text-left text-sm font-bold text-rose-700 transition hover:bg-rose-50"
             role="menuitem"
             type="button"
             onClick={() => {

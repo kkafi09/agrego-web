@@ -275,3 +275,28 @@ export const getUserByToken = query({
     };
   },
 });
+
+export const listBuyers = query({
+  args: {
+    searchTerm: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const users = await ctx.db.query("users").collect();
+    const normalizedSearch = (args.searchTerm ?? "").trim().toLowerCase();
+
+    return users
+      .filter((user) => user.role === "buyer")
+      .filter((user) =>
+        normalizedSearch
+          ? user.name.toLowerCase().includes(normalizedSearch) ||
+            user.email.toLowerCase().includes(normalizedSearch)
+          : true,
+      )
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map((user) => ({
+        id: user._id,
+        name: user.name,
+        email: user.email,
+      }));
+  },
+});

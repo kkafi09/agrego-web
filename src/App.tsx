@@ -3,7 +3,7 @@ import { Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-
 import { useQuery, useMutation } from 'convex/react'
 import { api } from '../convex/_generated/api'
 import { Toaster } from 'react-hot-toast'
-import AppShell from './components/layout/app-shell'
+import AppShell from './components/layout/shell'
 import type { Page } from './config/navigation'
 import { getPageFromPath, getPagePath } from './config/routes'
 import {
@@ -35,9 +35,7 @@ import {
     QcResultDetailPage,
     RegisterPage,
     ResetPasswordPage,
-    type DepositRecord,
 } from './pages'
-import { initialDepositRecords } from './pages/page-data'
 
 const authPages: Page[] = ['login', 'register', 'resetPassword']
 
@@ -45,7 +43,6 @@ function App() {
     const location = useLocation()
     const navigate = useNavigate()
     const page = getPageFromPath(location.pathname)
-    const [records, setRecords] = useState<DepositRecord[]>(initialDepositRecords)
 
     const [token, setToken] = useState<string | null>(() => localStorage.getItem(authTokenStorageKey))
     const [user, setUser] = useState<AuthUser | null>(() => {
@@ -153,17 +150,10 @@ function App() {
             >
                 <Routes>
                     <Route path={getPagePath('dashboard')} element={requireAuth(<DashboardPage />)} />
-                    <Route path={getPagePath('deposits')} element={requireAuth(<DepositHistoryPage records={records} />)} />
+                    <Route path={getPagePath('deposits')} element={requireAuth(<DepositHistoryPage />)} />
                     <Route
                         path={getPagePath('newDeposit')}
-                        element={requireAuth(
-                            <NewDepositPage
-                                onSave={(record) => {
-                                    setRecords((current) => [record, ...current])
-                                    goToPage('deposits')
-                                }}
-                            />,
-                        )}
+                        element={requireAuth(<NewDepositPage goToPage={goToPage} />)}
                     />
                     <Route path={getPagePath('qcHistory')} element={requireAuth(<QcHistoryPage />)} />
                     <Route path={getPagePath('qcDepositDetail')} element={requireAuth(<QcDepositDetailPage />)} />
@@ -174,7 +164,7 @@ function App() {
                     <Route path={getPagePath('contracts')} element={requireAuth(<ContractsPage goToPage={goToPage} />)} />
                     <Route path={getPagePath('newContract')} element={requireAuth(<NewContractPage />)} />
                     <Route path={getPagePath('contractDetail')} element={requireAuth(<ContractDetailPage />)} />
-                    <Route path={getPagePath('depositReport')} element={requireAuth(<DepositReportPage records={records} />)} />
+                    <Route path={getPagePath('depositReport')} element={requireAuth(<DepositReportPage />)} />
                     <Route path={getPagePath('profitShares')} element={requireAuth(<ProfitSharesPage />)} />
                     <Route
                         path={getPagePath('login')}
@@ -190,7 +180,7 @@ function App() {
                     <Route path={getPagePath('profile')} element={requireAuth(<ProfilePage user={user} onSave={setUser} />)} />
                     <Route path={getPagePath('members')} element={requireAuth(<MembersPage />)} />
                     <Route path={getPagePath('commodities')} element={requireAuth(<CommoditiesPage />)} />
-                    <Route path={getPagePath('cooperativeProfile')} element={requireAuth(<CooperativeProfilePage />)} />
+                    <Route path={getPagePath('cooperativeProfile')} element={requireAuth(<CooperativeProfilePage user={user} />)} />
                     <Route path="*" element={<Navigate replace to={getPagePath('dashboard')} />} />
                 </Routes>
             </AppShell>

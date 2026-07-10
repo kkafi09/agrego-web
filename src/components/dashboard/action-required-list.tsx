@@ -16,30 +16,30 @@ interface ActionRequiredListProps {
 export default function ActionRequiredList({ notifications }: ActionRequiredListProps) {
   if (notifications.length === 0) {
     return (
-      <div className="empty-notifications">
-        <AlertCircle size={24} className="empty-icon" />
-        <p>Tidak ada notifikasi penting saat ini.</p>
+      <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
+        <AlertCircle size={24} className="text-slate-400" />
+        <p className="mt-3 text-sm font-semibold text-slate-500">Tidak ada notifikasi penting saat ini.</p>
       </div>
     )
   }
 
   return (
-    <div className="action-required-list">
+    <div className="grid gap-3">
       {notifications.map((item, index) => (
-        <article className="action-item" key={item.title + index}>
-          <div className="action-item-header">
-            <span className="pulse-dot" aria-hidden="true" />
-            <strong className="action-title">{item.title}</strong>
+        <article className="rounded-xl border border-orange-200 bg-orange-50/60 p-4" key={item.title + index}>
+          <div className="flex items-center gap-2">
+            <span className="h-2.5 w-2.5 rounded-full bg-orange-500 shadow-[0_0_0_4px_rgba(249,115,22,0.14)]" aria-hidden="true" />
+            <strong className="text-sm font-black text-slate-950">{item.title}</strong>
           </div>
-          <p className="action-body">{item.body}</p>
-          <div className="action-footer">
-            <div className="time-meta">
+          <p className="mt-2 text-sm leading-relaxed text-slate-600">{item.body}</p>
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-500">
               <Clock size={12} />
               <span>{item.time}</span>
             </div>
             {item.actionLabel && (
               <button
-                className="action-btn-link"
+                className="text-sm font-black text-orange-700 transition hover:text-orange-800"
                 type="button"
                 onClick={item.onAction}
               >

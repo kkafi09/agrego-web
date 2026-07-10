@@ -41,25 +41,25 @@ export function MembersPage() {
 
   return (
     <>
-      <header className="topbar">
+      <header className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-6 [&_h1]:text-2xl [&_h1]:font-black [&_h1]:tracking-normal [&_h1]:text-slate-950 sm:[&_h1]:text-3xl">
         <div>
-          <p className="eyebrow">AGREGO / Data Master</p>
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-700">AGREGO / Data Master</p>
           <h1>Manajemen anggota</h1>
         </div>
-        <div className="operator-panel">
+        <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-right [&_span]:block [&_span]:text-xs [&_span]:font-bold [&_span]:text-emerald-700 [&_strong]:mt-1 [&_strong]:block [&_strong]:text-lg [&_strong]:font-black [&_strong]:text-slate-950">
           <span>Total anggota</span>
           <strong>{memberList?.length ?? 0}</strong>
         </div>
       </header>
-      <section className="panel">
-        <div className="section-heading inline">
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between [&_h2]:text-lg [&_h2]:font-black [&_h2]:text-slate-950 [&>span]:text-sm [&>span]:font-bold [&>span]:text-slate-500">
           <div>
-            <p className="eyebrow">Anggota Koperasi</p>
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-700">Anggota Koperasi</p>
             <h2>Data petani penyetor</h2>
           </div>
           <span>Database Terkoneksi</span>
         </div>
-        <div className="filter-row">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 [&_label]:grid [&_label]:gap-2 [&_label>span]:text-sm [&_label>span]:font-bold [&_label>span]:text-slate-700 [&_input]:h-11 [&_input]:rounded-lg [&_input]:border [&_input]:border-slate-200 [&_input]:bg-white [&_input]:px-3 [&_input]:text-sm [&_input]:font-semibold [&_input]:outline-none [&_input:focus]:border-emerald-500 [&_input:focus]:ring-4 [&_input:focus]:ring-emerald-100 [&_select]:h-11 [&_select]:rounded-lg [&_select]:border [&_select]:border-slate-200 [&_select]:bg-white [&_select]:px-3 [&_select]:text-sm [&_select]:font-semibold [&_select]:outline-none [&_select:focus]:border-emerald-500 [&_select:focus]:ring-4 [&_select:focus]:ring-emerald-100">
           <label>
             <span>Cari Nama</span>
             <input
@@ -69,11 +69,11 @@ export function MembersPage() {
             />
           </label>
         </div>
-        <div className="candidate-list">
+        <div className="grid gap-3">
           {memberList === undefined ? (
-            <p className="success-note">Memuat data anggota...</p>
+            <p className="text-sm font-bold text-emerald-700">Memuat data anggota...</p>
           ) : memberList.length === 0 ? (
-            <p className="success-note">Belum ada anggota terdaftar.</p>
+            <p className="text-sm font-bold text-emerald-700">Belum ada anggota terdaftar.</p>
           ) : (
             memberList.map((member) => {
               const commodityName =
@@ -81,7 +81,7 @@ export function MembersPage() {
 
               return (
                 <button
-                  className="candidate-card"
+                  className="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 text-left transition hover:border-emerald-300 hover:bg-emerald-50/50 sm:grid-cols-[1fr_1fr_auto_auto] sm:items-center"
                   key={member._id}
                   type="button"
                   onClick={() => {
@@ -103,7 +103,7 @@ export function MembersPage() {
                     <span>{member.village || '-'}</span>
                     <b>{commodityName}</b>
                   </div>
-                  <span className="status-pill">
+                  <span className="inline-flex w-fit items-center rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-black text-emerald-700">
                     {member.status === 'active' ? 'Aktif' : 'Perlu Verifikasi'}
                   </span>
                   <small
@@ -129,13 +129,13 @@ export function MembersPage() {
           )}
         </div>
       </section>
-      <section className="panel status-update-panel">
-        <div className="section-heading">
-          <p className="eyebrow">Tambah / Ubah Anggota</p>
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="grid gap-1 [&_h2]:text-lg [&_h2]:font-black [&_h2]:text-slate-950">
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-700">Tambah / Ubah Anggota</p>
           <h2>Form data anggota</h2>
         </div>
         <form
-          className="deposit-form"
+          className="mt-4 grid gap-4 [&_label]:grid [&_label]:gap-2 [&_label>span]:text-sm [&_label>span]:font-bold [&_label>span]:text-slate-700 [&_input]:h-11 [&_input]:rounded-lg [&_input]:border [&_input]:border-slate-200 [&_input]:bg-white [&_input]:px-3 [&_input]:text-sm [&_input]:font-semibold [&_input]:outline-none [&_input:focus]:border-emerald-500 [&_input:focus]:ring-4 [&_input:focus]:ring-emerald-100 [&_select]:h-11 [&_select]:rounded-lg [&_select]:border [&_select]:border-slate-200 [&_select]:bg-white [&_select]:px-3 [&_select]:text-sm [&_select]:font-semibold [&_select]:outline-none [&_select:focus]:border-emerald-500 [&_select:focus]:ring-4 [&_select:focus]:ring-emerald-100 [&_textarea]:rounded-lg [&_textarea]:border [&_textarea]:border-slate-200 [&_textarea]:bg-white [&_textarea]:px-3 [&_textarea]:py-3 [&_textarea]:text-sm [&_textarea]:font-semibold [&_textarea]:outline-none [&_textarea:focus]:border-emerald-500 [&_textarea:focus]:ring-4 [&_textarea:focus]:ring-emerald-100"
           onSubmit={async (event) => {
             event.preventDefault()
             if (!koperasiId) {
@@ -172,7 +172,7 @@ export function MembersPage() {
             }
           }}
         >
-          <div className="form-grid">
+          <div className="grid gap-4 sm:grid-cols-2 [&_label]:grid [&_label]:gap-2 [&_label>span]:text-sm [&_label>span]:font-bold [&_label>span]:text-slate-700 [&_input]:h-11 [&_input]:rounded-lg [&_input]:border [&_input]:border-slate-200 [&_input]:bg-white [&_input]:px-3 [&_input]:text-sm [&_input]:font-semibold [&_input]:outline-none [&_input:focus]:border-emerald-500 [&_input:focus]:ring-4 [&_input:focus]:ring-emerald-100 [&_select]:h-11 [&_select]:rounded-lg [&_select]:border [&_select]:border-slate-200 [&_select]:bg-white [&_select]:px-3 [&_select]:text-sm [&_select]:font-semibold [&_select]:outline-none [&_select:focus]:border-emerald-500 [&_select:focus]:ring-4 [&_select:focus]:ring-emerald-100">
             <label>
               <span>Nama</span>
               <input
@@ -190,7 +190,7 @@ export function MembersPage() {
               />
             </label>
           </div>
-          <div className="form-grid">
+          <div className="grid gap-4 sm:grid-cols-2 [&_label]:grid [&_label]:gap-2 [&_label>span]:text-sm [&_label>span]:font-bold [&_label>span]:text-slate-700 [&_input]:h-11 [&_input]:rounded-lg [&_input]:border [&_input]:border-slate-200 [&_input]:bg-white [&_input]:px-3 [&_input]:text-sm [&_input]:font-semibold [&_input]:outline-none [&_input:focus]:border-emerald-500 [&_input:focus]:ring-4 [&_input:focus]:ring-emerald-100 [&_select]:h-11 [&_select]:rounded-lg [&_select]:border [&_select]:border-slate-200 [&_select]:bg-white [&_select]:px-3 [&_select]:text-sm [&_select]:font-semibold [&_select]:outline-none [&_select:focus]:border-emerald-500 [&_select:focus]:ring-4 [&_select:focus]:ring-emerald-100">
             <label>
               <span>Dusun</span>
               <input
@@ -213,13 +213,13 @@ export function MembersPage() {
               </select>
             </label>
           </div>
-          <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-            <button className="primary-action" type="submit">
+          <div className="mt-4 flex flex-wrap gap-3">
+            <button className="inline-flex items-center justify-center rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-black text-white shadow-sm transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50" type="submit">
               {form._id ? 'Simpan Perubahan' : 'Tambah Anggota'}
             </button>
             {form._id || form.name || form.phone || form.village || form.primaryCommodityId ? (
               <button
-                className="text-action"
+                className="text-sm font-black text-emerald-700 transition hover:text-emerald-800"
                 type="button"
                 onClick={() => {
                   setForm({ name: '', phone: '', village: '', primaryCommodityId: '' })
@@ -230,7 +230,7 @@ export function MembersPage() {
               </button>
             ) : null}
           </div>
-          {saved ? <p className="success-note">Data anggota berhasil disimpan.</p> : null}
+          {saved ? <p className="text-sm font-bold text-emerald-700">Data anggota berhasil disimpan.</p> : null}
         </form>
       </section>
     </>

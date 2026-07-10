@@ -9,6 +9,7 @@ import {
   X,
   LogOut
 } from 'lucide-react'
+import { cn } from '../../lib/utils'
 
 interface MobileNavigationProps {
   currentPage: Page
@@ -71,22 +72,21 @@ export default function MobileNavigation({
   return (
     <>
       {/* Mobile Top Sticky Bar */}
-      <div className="mobile-top-bar" aria-label="Header Mobile">
-        <span className="mobile-brand">AGREGO</span>
+      <div className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-slate-200 bg-white/95 px-4 backdrop-blur lg:hidden" aria-label="Header Mobile">
+        <span className="text-base font-black text-[#0B2F15]">AGREGO</span>
         <button
-          className="mobile-avatar-btn"
+          className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-700 text-xs font-black text-white"
           type="button"
           onClick={() => onPageChange('profile')}
           aria-label="Profil saya"
         >
-          <div className="mobile-avatar">{getInitials(user.name)}</div>
+          <div>{getInitials(user.name)}</div>
         </button>
       </div>
 
-      {/* Mobile Bottom Navigation Bar */}
-      <nav className="mobile-bottom-nav" aria-label="Navigasi Bawah">
+      <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-slate-200 bg-white/95 px-2 pb-[max(env(safe-area-inset-bottom),8px)] pt-2 shadow-[0_-12px_30px_rgba(15,23,42,0.08)] backdrop-blur lg:hidden" aria-label="Navigasi Bawah">
         <button
-          className={`mobile-nav-btn ${isTabActive('dashboard') ? 'active' : ''}`}
+          className={cn('flex min-w-0 flex-col items-center gap-1 rounded-lg px-1 py-2 text-[11px] font-bold transition', isTabActive('dashboard') ? 'bg-emerald-50 text-emerald-700' : 'text-slate-500')}
           type="button"
           onClick={() => onPageChange('dashboard')}
         >
@@ -96,7 +96,7 @@ export default function MobileNavigation({
 
         {allowed.includes('deposits') && (
           <button
-            className={`mobile-nav-btn ${isTabActive('setoran') ? 'active' : ''}`}
+          className={cn('flex min-w-0 flex-col items-center gap-1 rounded-lg px-1 py-2 text-[11px] font-bold transition', isTabActive('setoran') ? 'bg-emerald-50 text-emerald-700' : 'text-slate-500')}
             type="button"
             onClick={() => onPageChange('deposits')}
           >
@@ -107,7 +107,7 @@ export default function MobileNavigation({
 
         {allowed.includes('qcHistory') && (
           <button
-            className={`mobile-nav-btn ${isTabActive('qc') ? 'active' : ''}`}
+            className={cn('flex min-w-0 flex-col items-center gap-1 rounded-lg px-1 py-2 text-[11px] font-bold transition', isTabActive('qc') ? 'bg-emerald-50 text-emerald-700' : 'text-slate-500')}
             type="button"
             onClick={() => onPageChange('qcHistory')}
           >
@@ -118,7 +118,7 @@ export default function MobileNavigation({
 
         {allowed.includes('contracts') && (
           <button
-            className={`mobile-nav-btn ${isTabActive('kontrak') ? 'active' : ''}`}
+            className={cn('flex min-w-0 flex-col items-center gap-1 rounded-lg px-1 py-2 text-[11px] font-bold transition', isTabActive('kontrak') ? 'bg-emerald-50 text-emerald-700' : 'text-slate-500')}
             type="button"
             onClick={() => onPageChange('contracts')}
           >
@@ -128,7 +128,7 @@ export default function MobileNavigation({
         )}
 
         <button
-          className={`mobile-nav-btn ${isOpen ? 'active' : ''}`}
+          className={cn('flex min-w-0 flex-col items-center gap-1 rounded-lg px-1 py-2 text-[11px] font-bold transition', isOpen ? 'bg-emerald-50 text-emerald-700' : 'text-slate-500')}
           type="button"
           onClick={() => setIsOpen(!isOpen)}
           aria-expanded={isOpen}
@@ -141,15 +141,15 @@ export default function MobileNavigation({
 
       {/* Mobile Sidebar Overlay Drawer */}
       {isOpen && (
-        <div className="mobile-drawer-overlay" onClick={() => setIsOpen(false)}>
-          <div className="mobile-drawer" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
-            <div className="mobile-drawer-header">
-              <div className="mobile-drawer-brand">
-                <span className="drawer-brand-logo">AGREGO</span>
-                <span className="drawer-brand-sub">Collective Supply Platform</span>
+        <div className="fixed inset-0 z-50 bg-slate-950/45 backdrop-blur-sm lg:hidden" onClick={() => setIsOpen(false)}>
+          <div className="absolute inset-y-0 right-0 flex w-[min(88vw,380px)] flex-col bg-white shadow-2xl" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+            <div className="flex items-center justify-between border-b border-slate-200 p-4">
+              <div>
+                <span className="block text-lg font-black text-[#0B2F15]">AGREGO</span>
+                <span className="block text-xs font-semibold text-slate-500">Collective Supply Platform</span>
               </div>
               <button
-                className="mobile-drawer-close"
+                className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 text-slate-600"
                 type="button"
                 onClick={() => setIsOpen(false)}
                 aria-label="Tutup menu"
@@ -158,18 +158,18 @@ export default function MobileNavigation({
               </button>
             </div>
 
-            <div className="mobile-drawer-content">
+            <div className="flex-1 overflow-y-auto p-4">
               {filteredGroups.map((group) => (
-                <div key={group.label} className="drawer-nav-group">
-                  <span className="drawer-group-label">{group.label}</span>
-                  <div className="drawer-group-items">
+                <div key={group.label} className="mb-5">
+                  <span className="mb-2 block text-xs font-black uppercase tracking-[0.16em] text-slate-400">{group.label}</span>
+                  <div className="grid gap-1">
                     {group.items.map((item) => {
                       const Icon = item.icon
                       const isActive = currentPage === item.id
                       return (
                         <button
                           key={item.id}
-                          className={`drawer-item-btn ${isActive ? 'active' : ''}`}
+                          className={cn('flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-bold transition', isActive ? 'bg-emerald-50 text-emerald-700' : 'text-slate-600 hover:bg-slate-50')}
                           type="button"
                           onClick={() => {
                             setIsOpen(false)
@@ -180,7 +180,7 @@ export default function MobileNavigation({
                             }
                           }}
                         >
-                          <Icon size={18} className="drawer-item-icon" />
+                          <Icon size={18} className="shrink-0" />
                           <span>{item.label}</span>
                         </button>
                       )
@@ -190,16 +190,16 @@ export default function MobileNavigation({
               ))}
             </div>
 
-            <div className="mobile-drawer-footer">
-              <div className="drawer-user-info">
-                <div className="drawer-avatar">{getInitials(user.name)}</div>
-                <div className="drawer-user-details">
-                  <span className="drawer-user-name">{user.name}</span>
-                  <span className="drawer-user-role">{user.role}</span>
+            <div className="border-t border-slate-200 p-4">
+              <div className="flex items-center gap-3 rounded-xl bg-slate-50 p-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-700 text-sm font-black text-white">{getInitials(user.name)}</div>
+                <div className="min-w-0">
+                  <span className="block truncate text-sm font-black text-slate-950">{user.name}</span>
+                  <span className="block text-xs font-semibold text-slate-500">{user.role}</span>
                 </div>
               </div>
               <button
-                className="drawer-logout-btn"
+                className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2.5 text-sm font-bold text-rose-700"
                 type="button"
                 onClick={() => {
                   setIsOpen(false)

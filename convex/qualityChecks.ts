@@ -195,3 +195,81 @@ export const listDepositsWithLatestQualityScore = query({
     );
   },
 });
+
+export const listQualityChecks = query({
+  args: {
+    koperasiId: v.id("koperasiProfiles"),
+  },
+  handler: async (ctx, args) => {
+    const checks = await ctx.db
+      .query("qualityChecks")
+      .withIndex("by_koperasi", (q) => q.eq("koperasiId", args.koperasiId))
+      .collect();
+
+    return Promise.all(
+      checks
+        .sort((a, b) => b.checkedAt - a.checkedAt)
+        .map(async (check) => {
+          const deposit = await ctx.db.get(check.depositId);
+          const [member, commodity] = deposit
+            ? await Promise.all([
+                ctx.db.get(deposit.memberId),
+                ctx.db.get(deposit.commodityId),
+              ])
+            : [null, null];
+
+          return {
+            id: check._id,
+            depositId: check.depositId,
+            depositNumber: deposit?.depositNumber ?? null,
+            memberName: member?.name ?? "Anggota tidak ditemukan",
+            commodityName: commodity?.name ?? "Komoditas tidak ditemukan",
+            moisturePercent: check.moisturePercent,
+            sizeGrade: check.sizeGrade,
+            defectPercent: check.defectPercent,
+            qualityScore: check.qualityScore,
+            decision: check.decision,
+            inspectorName: check.inspectorName,
+            notes: check.notes ?? null,
+            checkedAt: check.checkedAt,
+          };
+        }),
+    );
+  },
+});
+
+export const getQualityCheckById = query({
+  args: {
+    qualityCheckId: v.id("qualityChecks"),
+  },
+  handler: async (ctx, args) => {
+    const check = await ctx.db.get(args.qualityCheckId);
+    if (!check) {
+      return null;
+    }
+
+    const deposit = await ctx.db.get(check.depositId);
+    const [member, commodity] = deposit
+      ? await Promise.all([
+          ctx.db.get(deposit.memberId),
+          ctx.db.get(deposit.commodityId),
+        ])
+      : [null, null];
+
+    return {
+      id: check._id,
+      depositId: check.depositId,
+      depositNumber: deposit?.depositNumber ?? null,
+      memberName: member?.name ?? "Anggota tidak ditemukan",
+      commodityName: commodity?.name ?? "Komoditas tidak ditemukan",
+      moisturePercent: check.moisturePercent,
+      sizeGrade: check.sizeGrade,
+      defectPercent: check.defectPercent,
+      qualityScore: check.qualityScore,
+      decision: check.decision,
+      inspectorName: check.inspectorName,
+      notes: check.notes ?? null,
+      checkedAt: check.checkedAt,
+    };
+  },
+});

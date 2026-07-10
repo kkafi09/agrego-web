@@ -1,9 +1,9 @@
 interface StockSummary {
-  commodity: string
+  commodityId: string
+  commodityName: string
   totalKg: number
   readyKg: number
-  quality: number
-  trend: string
+  averageQualityScore: number | null
 }
 
 interface CommodityStockListProps {
@@ -15,23 +15,31 @@ export default function CommodityStockList({ stocks }: CommodityStockListProps) 
     return `${val.toLocaleString('id-ID')} kg`
   }
 
+  if (stocks.length === 0) {
+    return (
+      <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
+        <p className="text-sm font-semibold text-slate-500">Belum ada stok tercatat.</p>
+      </div>
+    )
+  }
+
   return (
-    <div className="commodity-stock-list">
+    <div className="grid gap-3">
       {stocks.map((stock) => (
-        <article className="stock-item-row" key={stock.commodity}>
-          <div className="stock-row-left">
-            <strong className="stock-commodity-name">{stock.commodity}</strong>
-            <span className="stock-trend-label">{stock.trend}</span>
+        <article className="grid gap-4 rounded-xl border border-slate-200 bg-white p-4 sm:grid-cols-[1fr_auto] sm:items-center" key={stock.commodityId}>
+          <div>
+            <strong className="block text-sm font-black text-slate-950">{stock.commodityName}</strong>
+            <span className="mt-1 block text-xs font-semibold text-slate-500">{formatKg(stock.readyKg)} siap dialokasi</span>
           </div>
           
-          <div className="stock-row-right">
-            <div className="stock-values-wrapper">
-              <span className="stock-weight-total">{formatKg(stock.totalKg)}</span>
-              <span className="stock-qs-score">QS {stock.quality}</span>
+          <div className="grid gap-2 sm:min-w-48">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-sm font-black text-slate-950">{formatKg(stock.totalKg)}</span>
+              <span className="rounded-full bg-emerald-50 px-2 py-1 text-xs font-black text-emerald-700">QS {stock.averageQualityScore ?? '-'}</span>
             </div>
             
-            <div className="stock-quality-bar" aria-label={`Quality score ${stock.quality}%`}>
-              <div className="stock-quality-bar-fill" style={{ width: `${stock.quality}%` }} />
+            <div className="h-2 overflow-hidden rounded-full bg-slate-100" aria-label={`Quality score ${stock.averageQualityScore ?? 0}%`}>
+              <div className="h-full rounded-full bg-emerald-600" style={{ width: `${stock.averageQualityScore ?? 0}%` }} />
             </div>
           </div>
         </article>

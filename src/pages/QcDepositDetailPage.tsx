@@ -1,194 +1,72 @@
 import { useState } from 'react'
-import { initialDepositRecords } from './page-data'
-import {
-  type QcFormState,
-  calculateQualityScore,
-  gradeOptions,
-  collectorOptions,
-  formatKg,
-} from './shared'
+import { useQuery } from 'convex/react'
+import { api } from '../../convex/_generated/api'
+import { formatDate, formatKg, mapDepositStatus } from './shared'
 
 export function QcDepositDetailPage() {
-  const deposit = initialDepositRecords[2]
-  const [form, setForm] = useState<QcFormState>({
-    depositId: deposit.id,
-    moisturePercent: '12',
-    sizeGrade: 'B',
-    defectPercent: '2',
-    inspector: 'Dewi',
-    notes: '',
-  })
-  const qualityScore = calculateQualityScore(form)
-  const checklist = [
-    'Sampel fisik sudah diterima petugas QC',
-    'Berat tercatat cocok dengan nota penerimaan',
-    'Belum ada quality score final',
-    'Menunggu pengukuran kadar air dan kerusakan',
-  ]
-
-  function updateField(field: keyof QcFormState, value: string) {
-    setForm((current) => ({
-      ...current,
-      [field]: value,
-    }))
-  }
+  const defaultKoperasi = useQuery(api.koperasi.getDefaultKoperasi)
+  const koperasiId = defaultKoperasi?._id
+  const deposits = useQuery(api.deposits.listDeposits, koperasiId ? { koperasiId, status: 'recorded' } : 'skip')
+  const [selectedDepositId, setSelectedDepositId] = useState('')
+  const deposit = deposits?.find((item) => item.id === selectedDepositId)
 
   return (
     <>
-      <header className="topbar">
+      <header className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-6 [&_h1]:text-2xl [&_h1]:font-black [&_h1]:tracking-normal [&_h1]:text-slate-950 sm:[&_h1]:text-3xl">
         <div>
-          <p className="eyebrow">AGREGO / Quality Check</p>
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-700">AGREGO / Quality Check</p>
           <h1>Detail setoran untuk pemeriksaan</h1>
         </div>
-        <div className="operator-panel" aria-label="Setoran aktif untuk QC">
+        <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-right [&_span]:block [&_span]:text-xs [&_span]:font-bold [&_span]:text-emerald-700 [&_strong]:mt-1 [&_strong]:block [&_strong]:text-lg [&_strong]:font-black [&_strong]:text-slate-950" aria-label="Setoran aktif untuk QC">
           <span>Setoran aktif</span>
-          <strong>{deposit.id}</strong>
+          <strong>{deposit?.depositNumber ?? '-'}</strong>
         </div>
       </header>
 
-      <section className="detail-layout">
-        <article className="panel qc-detail-card">
-          <div className="section-heading">
-            <p className="eyebrow">Identitas Setoran</p>
-            <h2>{deposit.commodity}</h2>
-          </div>
-          <dl className="detail-metrics">
-            <div>
-              <dt>Anggota</dt>
-              <dd>{deposit.member}</dd>
-            </div>
-            <div>
-              <dt>Kontak</dt>
-              <dd>{deposit.phone}</dd>
-            </div>
-            <div>
-              <dt>Asal</dt>
-              <dd>{deposit.origin}</dd>
-            </div>
-            <div>
-              <dt>Berat</dt>
-              <dd>{formatKg(deposit.weightKg)}</dd>
-            </div>
-            <div>
-              <dt>Tanggal Setor</dt>
-              <dd>{deposit.submittedAt}</dd>
-            </div>
-            <div>
-              <dt>Status</dt>
-              <dd>{deposit.status}</dd>
-            </div>
-          </dl>
-        </article>
-
-        <article className="panel qc-detail-card">
-          <div className="section-heading">
-            <p className="eyebrow">Kesiapan QC</p>
-            <h2>Antrean pemeriksaan</h2>
-          </div>
-          <ul className="checklist">
-            {checklist.map((item) => (
-              <li key={item}>{item}</li>
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <label className="grid gap-2">
+          <span className="text-sm font-bold text-slate-700">Pilih setoran menunggu QC</span>
+          <select className="h-11 rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100" value={selectedDepositId} onChange={(event) => setSelectedDepositId(event.target.value)}>
+            <option value="">Pilih setoran</option>
+            {deposits?.map((item) => (
+              <option key={item.id} value={item.id}>{item.depositNumber} / {item.memberName}</option>
             ))}
-          </ul>
-          <div className="sample-box">
-            <span>Catatan awal</span>
-            <p>{deposit.notes}</p>
-          </div>
-        </article>
-
-        <article className="panel qc-detail-card wide">
-          <div className="section-heading inline">
-            <div>
-              <p className="eyebrow">Parameter Target</p>
-              <h2>Standar minimum komoditas</h2>
-            </div>
-            <span>Data tiruan</span>
-          </div>
-          <div className="parameter-grid">
-            <div>
-              <span>Kadar air ideal</span>
-              <strong>10% - 13%</strong>
-            </div>
-            <div>
-              <span>Grade ukuran</span>
-              <strong>A atau B</strong>
-            </div>
-            <div>
-              <span>Kerusakan maksimal</span>
-              <strong>3%</strong>
-            </div>
-            <div>
-              <span>Skor lolos</span>
-              <strong>Minimal 82</strong>
-            </div>
-          </div>
-        </article>
-
-        <article className="panel qc-detail-card wide">
-          <div className="section-heading inline">
-            <div>
-              <p className="eyebrow">Form Pemeriksaan</p>
-              <h2>Input QC untuk {deposit.id}</h2>
-            </div>
-            <span>Skor lokal {qualityScore}</span>
-          </div>
-          <div className="embedded-qc-form">
-            <label>
-              <span>Kadar Air (%)</span>
-              <input
-                min="0"
-                step="0.1"
-                type="number"
-                value={form.moisturePercent}
-                onChange={(event) =>
-                  updateField('moisturePercent', event.target.value)
-                }
-              />
-            </label>
-            <label>
-              <span>Grade Ukuran</span>
-              <select
-                value={form.sizeGrade}
-                onChange={(event) => updateField('sizeGrade', event.target.value)}
-              >
-                {gradeOptions.map((grade) => (
-                  <option key={grade}>{grade}</option>
-                ))}
-              </select>
-            </label>
-            <label>
-              <span>Kerusakan (%)</span>
-              <input
-                min="0"
-                step="0.1"
-                type="number"
-                value={form.defectPercent}
-                onChange={(event) =>
-                  updateField('defectPercent', event.target.value)
-                }
-              />
-            </label>
-            <label>
-              <span>Petugas QC</span>
-              <select
-                value={form.inspector}
-                onChange={(event) => updateField('inspector', event.target.value)}
-              >
-                {collectorOptions.map((collector) => (
-                  <option key={collector}>{collector}</option>
-                ))}
-              </select>
-            </label>
-          </div>
-          <div className="score-preview inline-score">
-            <span>Quality Score</span>
-            <strong>{qualityScore}</strong>
-            <div className="quality-bar" aria-label={`Quality score ${qualityScore}`}>
-              <span style={{ width: `${qualityScore}%` }} />
-            </div>
-          </div>
-        </article>
+          </select>
+        </label>
       </section>
+
+      {!deposit ? (
+        <p className="rounded-2xl border border-slate-200 bg-white p-5 text-sm font-bold text-emerald-700 shadow-sm">Belum ada setoran dipilih atau belum ada setoran yang menunggu QC.</p>
+      ) : (
+        <section className="grid gap-5 lg:grid-cols-2">
+          <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="grid gap-1 [&_h2]:text-lg [&_h2]:font-black [&_h2]:text-slate-950">
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-700">Identitas Setoran</p>
+              <h2>{deposit.commodityName}</h2>
+            </div>
+            <dl className="grid gap-3 sm:grid-cols-2">
+              <div><dt>Anggota</dt><dd>{deposit.memberName}</dd></div>
+              <div><dt>Asal</dt><dd>{deposit.origin}</dd></div>
+              <div><dt>Berat</dt><dd>{formatKg(deposit.weightKg)}</dd></div>
+              <div><dt>Tanggal Setor</dt><dd>{formatDate(deposit.submittedAt)}</dd></div>
+              <div><dt>Status</dt><dd>{mapDepositStatus(deposit.status as any)}</dd></div>
+              <div><dt>Petugas</dt><dd>{deposit.collectorName}</dd></div>
+            </dl>
+          </article>
+
+          <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="grid gap-1 [&_h2]:text-lg [&_h2]:font-black [&_h2]:text-slate-950">
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-700">Kesiapan QC</p>
+              <h2>Antrean pemeriksaan</h2>
+            </div>
+            <ul className="mt-4 grid gap-2">
+              <li className="rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800">Setoran tercatat di Convex</li>
+              <li className="rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800">Belum memiliki quality score final</li>
+              <li className="rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800">Siap diproses lewat form QC</li>
+            </ul>
+          </article>
+        </section>
+      )}
     </>
   )
 }

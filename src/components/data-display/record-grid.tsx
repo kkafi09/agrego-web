@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Search } from 'lucide-react'
+import { cn } from '../../lib/utils'
 
 export interface Column<T> {
   header: string
@@ -31,13 +32,13 @@ export default function DataTable<T>({
   const showSearch = onSearchChange !== undefined && searchValue !== undefined
 
   return (
-    <div className="data-table-wrapper">
+    <div className="grid gap-4">
       {showSearch && (
-        <div className="table-search-container">
-          <Search size={16} className="table-search-icon" />
+        <div className="relative">
+          <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
-            className="table-search-input"
+            className="h-11 w-full rounded-lg border border-slate-200 bg-slate-50 pl-10 pr-3 text-sm font-semibold text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-100"
             placeholder={searchPlaceholder || 'Cari...'}
             value={searchValue}
             onChange={(e) => onSearchChange(e.target.value)}
@@ -45,21 +46,22 @@ export default function DataTable<T>({
         </div>
       )}
 
-      <div className="table-responsive-container">
-        <table className="data-table">
-          <thead>
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+        <div className="overflow-x-auto">
+        <table className="min-w-full border-collapse text-left text-sm">
+          <thead className="bg-slate-50 text-xs font-black uppercase tracking-wide text-slate-500">
             <tr>
               {columns.map((col, idx) => (
-                <th key={idx} className={col.className}>
+                <th key={idx} className={cn('whitespace-nowrap px-4 py-3', col.className)}>
                   {col.header}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-slate-100">
             {data.length === 0 ? (
               <tr>
-                <td colSpan={columns.length} className="table-empty-cell">
+                <td colSpan={columns.length} className="px-4 py-10 text-center text-sm font-semibold text-slate-500">
                   Tidak ada data yang tersedia
                 </td>
               </tr>
@@ -72,7 +74,11 @@ export default function DataTable<T>({
                   <tr
                     key={key}
                     onClick={() => onRowClick && onRowClick(item)}
-                    className={`${onRowClick ? 'clickable-row' : ''} ${isSelected ? 'row-selected' : ''}`}
+                    className={cn(
+                      'transition',
+                      onRowClick && 'cursor-pointer hover:bg-emerald-50/50',
+                      isSelected && 'bg-emerald-50',
+                    )}
                     tabIndex={onRowClick ? 0 : undefined}
                     onKeyDown={(e) => {
                       if (onRowClick && (e.key === 'Enter' || e.key === ' ')) {
@@ -82,7 +88,7 @@ export default function DataTable<T>({
                     }}
                   >
                     {columns.map((col, idx) => (
-                      <td key={idx} className={col.className}>
+                      <td key={idx} className={cn('px-4 py-3 align-middle text-slate-700', col.className)}>
                         {col.render(item, index)}
                       </td>
                     ))}
@@ -92,6 +98,7 @@ export default function DataTable<T>({
             )}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   )

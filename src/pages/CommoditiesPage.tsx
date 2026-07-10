@@ -33,24 +33,24 @@ export function CommoditiesPage() {
 
   return (
     <>
-      <header className="topbar">
+      <header className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-6 [&_h1]:text-2xl [&_h1]:font-black [&_h1]:tracking-normal [&_h1]:text-slate-950 sm:[&_h1]:text-3xl">
         <div>
-          <p className="eyebrow">AGREGO / Data Master</p>
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-700">AGREGO / Data Master</p>
           <h1>Manajemen komoditas</h1>
         </div>
-        <div className="operator-panel">
+        <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-right [&_span]:block [&_span]:text-xs [&_span]:font-bold [&_span]:text-emerald-700 [&_strong]:mt-1 [&_strong]:block [&_strong]:text-lg [&_strong]:font-black [&_strong]:text-slate-950">
           <span>Total komoditas</span>
           <strong>{commodityList?.length ?? 0}</strong>
         </div>
       </header>
-      <section className="pool-grid">
+      <section className="grid gap-4 sm:grid-cols-2 [&_label]:grid [&_label]:gap-2 [&_label>span]:text-sm [&_label>span]:font-bold [&_label>span]:text-slate-700 [&_input]:h-11 [&_input]:rounded-lg [&_input]:border [&_input]:border-slate-200 [&_input]:bg-white [&_input]:px-3 [&_input]:text-sm [&_input]:font-semibold [&_input]:outline-none [&_input:focus]:border-emerald-500 [&_input:focus]:ring-4 [&_input:focus]:ring-emerald-100 [&_select]:h-11 [&_select]:rounded-lg [&_select]:border [&_select]:border-slate-200 [&_select]:bg-white [&_select]:px-3 [&_select]:text-sm [&_select]:font-semibold [&_select]:outline-none [&_select:focus]:border-emerald-500 [&_select:focus]:ring-4 [&_select:focus]:ring-emerald-100 xl:grid-cols-3">
         {commodityList === undefined ? (
-          <p className="success-note">Memuat data komoditas...</p>
+          <p className="text-sm font-bold text-emerald-700">Memuat data komoditas...</p>
         ) : commodityList.length === 0 ? (
-          <p className="success-note">Belum ada komoditas terdaftar.</p>
+          <p className="text-sm font-bold text-emerald-700">Belum ada komoditas terdaftar.</p>
         ) : (
           commodityList.map((commodity) => (
-            <article className="pool-card" key={commodity._id}>
+            <article className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm" key={commodity._id}>
               <div>
                 <span>{commodity._id}</span>
                 <strong>{commodity.name}</strong>
@@ -69,9 +69,9 @@ export function CommoditiesPage() {
                   <dd>{commodity.qualityParameters.join(', ')}</dd>
                 </div>
               </dl>
-              <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+              <div className="mt-3 flex flex-wrap gap-2">
                 <button
-                  className="text-action"
+                  className="text-sm font-black text-emerald-700 transition hover:text-emerald-800"
                   type="button"
                   onClick={() => {
                     setForm({
@@ -87,7 +87,7 @@ export function CommoditiesPage() {
                   Ubah
                 </button>
                 <button
-                  className="text-action text-danger"
+                  className="text-sm font-black text-rose-700 transition hover:text-rose-800"
                   type="button"
                   onClick={async () => {
                     if (window.confirm(`Hapus ${commodity.name}?`)) {
@@ -114,8 +114,8 @@ export function CommoditiesPage() {
           ))
         )}
       </section>
-      <section className="panel status-update-panel">
-        <div className="filter-row">
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 [&_label]:grid [&_label]:gap-2 [&_label>span]:text-sm [&_label>span]:font-bold [&_label>span]:text-slate-700 [&_input]:h-11 [&_input]:rounded-lg [&_input]:border [&_input]:border-slate-200 [&_input]:bg-white [&_input]:px-3 [&_input]:text-sm [&_input]:font-semibold [&_input]:outline-none [&_input:focus]:border-emerald-500 [&_input:focus]:ring-4 [&_input:focus]:ring-emerald-100 [&_select]:h-11 [&_select]:rounded-lg [&_select]:border [&_select]:border-slate-200 [&_select]:bg-white [&_select]:px-3 [&_select]:text-sm [&_select]:font-semibold [&_select]:outline-none [&_select:focus]:border-emerald-500 [&_select:focus]:ring-4 [&_select:focus]:ring-emerald-100">
           <label>
             <span>Cari Komoditas</span>
             <input
@@ -125,12 +125,12 @@ export function CommoditiesPage() {
             />
           </label>
         </div>
-        <div className="section-heading">
-          <p className="eyebrow">Tambah / Ubah Komoditas</p>
+        <div className="grid gap-1 [&_h2]:text-lg [&_h2]:font-black [&_h2]:text-slate-950">
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-700">Tambah / Ubah Komoditas</p>
           <h2>Parameter kualitas</h2>
         </div>
         <form
-          className="deposit-form"
+          className="mt-4 grid gap-4 [&_label]:grid [&_label]:gap-2 [&_label>span]:text-sm [&_label>span]:font-bold [&_label>span]:text-slate-700 [&_input]:h-11 [&_input]:rounded-lg [&_input]:border [&_input]:border-slate-200 [&_input]:bg-white [&_input]:px-3 [&_input]:text-sm [&_input]:font-semibold [&_input]:outline-none [&_input:focus]:border-emerald-500 [&_input:focus]:ring-4 [&_input:focus]:ring-emerald-100 [&_select]:h-11 [&_select]:rounded-lg [&_select]:border [&_select]:border-slate-200 [&_select]:bg-white [&_select]:px-3 [&_select]:text-sm [&_select]:font-semibold [&_select]:outline-none [&_select:focus]:border-emerald-500 [&_select:focus]:ring-4 [&_select:focus]:ring-emerald-100 [&_textarea]:rounded-lg [&_textarea]:border [&_textarea]:border-slate-200 [&_textarea]:bg-white [&_textarea]:px-3 [&_textarea]:py-3 [&_textarea]:text-sm [&_textarea]:font-semibold [&_textarea]:outline-none [&_textarea:focus]:border-emerald-500 [&_textarea:focus]:ring-4 [&_textarea:focus]:ring-emerald-100"
           onSubmit={async (event) => {
             event.preventDefault()
             const paramsArray = form.qualityParameters
@@ -167,7 +167,7 @@ export function CommoditiesPage() {
             }
           }}
         >
-          <div className="form-grid">
+          <div className="grid gap-4 sm:grid-cols-2 [&_label]:grid [&_label]:gap-2 [&_label>span]:text-sm [&_label>span]:font-bold [&_label>span]:text-slate-700 [&_input]:h-11 [&_input]:rounded-lg [&_input]:border [&_input]:border-slate-200 [&_input]:bg-white [&_input]:px-3 [&_input]:text-sm [&_input]:font-semibold [&_input]:outline-none [&_input:focus]:border-emerald-500 [&_input:focus]:ring-4 [&_input:focus]:ring-emerald-100 [&_select]:h-11 [&_select]:rounded-lg [&_select]:border [&_select]:border-slate-200 [&_select]:bg-white [&_select]:px-3 [&_select]:text-sm [&_select]:font-semibold [&_select]:outline-none [&_select:focus]:border-emerald-500 [&_select:focus]:ring-4 [&_select:focus]:ring-emerald-100">
             <label>
               <span>Nama Komoditas</span>
               <input
@@ -188,7 +188,7 @@ export function CommoditiesPage() {
               />
             </label>
           </div>
-          <div className="form-grid">
+          <div className="grid gap-4 sm:grid-cols-2 [&_label]:grid [&_label]:gap-2 [&_label>span]:text-sm [&_label>span]:font-bold [&_label>span]:text-slate-700 [&_input]:h-11 [&_input]:rounded-lg [&_input]:border [&_input]:border-slate-200 [&_input]:bg-white [&_input]:px-3 [&_input]:text-sm [&_input]:font-semibold [&_input]:outline-none [&_input:focus]:border-emerald-500 [&_input:focus]:ring-4 [&_input:focus]:ring-emerald-100 [&_select]:h-11 [&_select]:rounded-lg [&_select]:border [&_select]:border-slate-200 [&_select]:bg-white [&_select]:px-3 [&_select]:text-sm [&_select]:font-semibold [&_select]:outline-none [&_select:focus]:border-emerald-500 [&_select:focus]:ring-4 [&_select:focus]:ring-emerald-100">
             <label>
               <span>Unit</span>
               <input
@@ -207,13 +207,13 @@ export function CommoditiesPage() {
               />
             </label>
           </div>
-          <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-            <button className="primary-action" type="submit">
+          <div className="mt-4 flex flex-wrap gap-3">
+            <button className="inline-flex items-center justify-center rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-black text-white shadow-sm transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50" type="submit">
               {form._id ? 'Simpan Perubahan' : 'Tambah Komoditas'}
             </button>
             {form._id || form.name || form.unit !== 'kg' || form.minimumQualityScore !== 85 ? (
               <button
-                className="text-action"
+                className="text-sm font-black text-emerald-700 transition hover:text-emerald-800"
                 type="button"
                 onClick={() => {
                   setForm({
@@ -229,7 +229,7 @@ export function CommoditiesPage() {
               </button>
             ) : null}
           </div>
-          {saved ? <p className="success-note">Data komoditas berhasil disimpan.</p> : null}
+          {saved ? <p className="text-sm font-bold text-emerald-700">Data komoditas berhasil disimpan.</p> : null}
         </form>
       </section>
     </>

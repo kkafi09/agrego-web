@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { navigationGroups, type Page } from '../../config/navigation'
 import { rolePermissions, type Role } from '../../config/role-navigation'
 import { LogOut, ChevronLeft, ChevronRight, User as UserIcon } from 'lucide-react'
+import { cn } from '../../lib/utils'
 
 interface AppSidebarProps {
   currentPage: Page
@@ -47,21 +48,24 @@ export default function AppSidebar({
   }
 
   return (
-    <aside className={`app-sidebar ${isCollapsed ? 'collapsed' : ''}`} aria-label="Sidebar Utama">
-      <div className="sidebar-header">
+    <aside className={cn(
+      'fixed inset-y-0 left-0 z-40 hidden border-r border-white/10 bg-[#0B2F15] text-white shadow-2xl transition-[width] duration-300 lg:flex lg:flex-col',
+      isCollapsed ? 'w-[72px]' : 'w-64',
+    )} aria-label="Sidebar Utama">
+      <div className="flex h-16 items-center gap-3 border-b border-white/10 px-4">
         {!isCollapsed && (
-          <div className="sidebar-brand">
-            <span className="brand-logo">AGREGO</span>
-            <span className="brand-subtitle">Collective Supply Platform</span>
+          <div className="min-w-0 flex-1">
+            <span className="block text-lg font-black tracking-normal text-white">AGREGO</span>
+            <span className="block truncate text-[11px] font-semibold text-white/55">Collective Supply Platform</span>
           </div>
         )}
         {isCollapsed && (
-          <div className="sidebar-brand-collapsed">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-sm font-black text-white">
             AG
           </div>
         )}
         <button
-          className="sidebar-toggle"
+          className="ml-auto inline-flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-white/75 transition hover:bg-white/10 hover:text-white"
           type="button"
           onClick={() => setIsCollapsed(!isCollapsed)}
           aria-label={isCollapsed ? 'Perluas sidebar' : 'Sembunyikan sidebar'}
@@ -70,18 +74,24 @@ export default function AppSidebar({
         </button>
       </div>
 
-      <nav className="sidebar-nav">
+      <nav className="flex-1 overflow-y-auto px-3 py-4">
         {filteredGroups.map((group) => (
-          <div key={group.label} className="nav-group">
-            {!isCollapsed && <span className="nav-group-label">{group.label}</span>}
-            <div className="nav-group-items">
+          <div key={group.label} className="mb-5">
+            {!isCollapsed && <span className="mb-2 block px-3 text-[11px] font-black uppercase tracking-[0.16em] text-white/35">{group.label}</span>}
+            <div className="grid gap-1">
               {group.items.map((item) => {
                 const Icon = item.icon
                 const isActive = currentPage === item.id
                 return (
                   <button
                     key={item.id}
-                    className={`nav-item-btn ${isActive ? 'active' : ''}`}
+                    className={cn(
+                      'flex h-10 items-center gap-3 rounded-lg px-3 text-sm font-bold transition',
+                      isCollapsed && 'justify-center px-0',
+                      isActive
+                        ? 'bg-white text-[#0B2F15] shadow-sm'
+                        : 'text-white/70 hover:bg-white/10 hover:text-white',
+                    )}
                     type="button"
                     onClick={() => {
                       if (item.id === 'logout') {
@@ -92,8 +102,8 @@ export default function AppSidebar({
                     }}
                     title={isCollapsed ? item.label : undefined}
                   >
-                    <Icon className="nav-item-icon" size={18} />
-                    {!isCollapsed && <span className="nav-item-text">{item.label}</span>}
+                    <Icon className="shrink-0" size={18} />
+                    {!isCollapsed && <span className="truncate">{item.label}</span>}
                   </button>
                 )
               })}
@@ -103,29 +113,35 @@ export default function AppSidebar({
       </nav>
 
       {user && (
-        <div className="sidebar-footer">
-          <div className="user-profile-trigger">
+        <div className="border-t border-white/10 p-3">
+          <div className="relative">
             <button
-              className="user-profile-btn"
+              className={cn(
+                'flex w-full items-center gap-3 rounded-xl bg-white/5 p-2 text-left transition hover:bg-white/10',
+                isCollapsed && 'justify-center',
+              )}
               type="button"
               onClick={() => setShowUserMenu(!showUserMenu)}
               aria-haspopup="true"
               aria-expanded={showUserMenu}
             >
-              <div className="user-avatar" aria-hidden="true">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-emerald-500 text-sm font-black text-white" aria-hidden="true">
                 {getInitials(user.name)}
               </div>
               {!isCollapsed && (
-                <div className="user-info">
-                  <span className="user-name">{user.name}</span>
-                  <span className="user-role">{user.role}</span>
+                <div className="min-w-0">
+                  <span className="block truncate text-sm font-black text-white">{user.name}</span>
+                  <span className="block text-xs font-semibold text-white/50">{user.role}</span>
                 </div>
               )}
             </button>
             {showUserMenu && (
-              <div className="user-menu-popover" role="menu">
+              <div className={cn(
+                'absolute bottom-14 z-50 w-48 overflow-hidden rounded-xl border border-slate-200 bg-white text-slate-700 shadow-xl',
+                isCollapsed ? 'left-12' : 'left-0',
+              )} role="menu">
                 <button
-                  className="popover-item"
+                  className="flex w-full items-center gap-2 px-3 py-2.5 text-sm font-bold transition hover:bg-slate-50"
                   role="menuitem"
                   type="button"
                   onClick={() => {
@@ -136,9 +152,9 @@ export default function AppSidebar({
                   <UserIcon size={14} />
                   <span>Profil Saya</span>
                 </button>
-                <div className="popover-divider" />
+                <div className="h-px bg-slate-100" />
                 <button
-                  className="popover-item text-danger"
+                  className="flex w-full items-center gap-2 px-3 py-2.5 text-sm font-bold text-rose-700 transition hover:bg-rose-50"
                   role="menuitem"
                   type="button"
                   onClick={() => {

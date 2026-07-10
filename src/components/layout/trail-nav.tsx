@@ -33,14 +33,14 @@ export default function BreadcrumbNav({ currentPage }: BreadcrumbNavProps) {
   const paths = breadcrumbMap[currentPage] || ['Home']
 
   return (
-    <nav className="breadcrumb-nav" aria-label="Breadcrumb">
-      <ol className="breadcrumb-list">
+    <nav className="hidden min-w-0 sm:block" aria-label="Breadcrumb">
+      <ol className="flex min-w-0 items-center gap-2 text-sm font-semibold">
         {paths.map((path, index) => {
           const isLast = index === paths.length - 1
           return (
-            <li key={path} className={`breadcrumb-item ${isLast ? 'active' : ''}`}>
-              {index > 0 && <span className="breadcrumb-separator">/</span>}
-              <span className="breadcrumb-text">{path}</span>
+            <li key={path} className="flex min-w-0 items-center gap-2">
+              {index > 0 && <span className="text-slate-300">/</span>}
+              <span className={`truncate ${isLast ? 'text-slate-950' : 'text-slate-400'}`}>{path}</span>
             </li>
           )
         })}

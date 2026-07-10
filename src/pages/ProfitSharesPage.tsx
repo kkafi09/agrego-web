@@ -4,6 +4,7 @@ import {
   formatKg,
   downloadCsv,
 } from './shared'
+import { cn } from '../lib/utils'
 
 export function ProfitSharesPage() {
   const [selectedMember, setSelectedMember] = useState(profitShares[0].member)
@@ -13,26 +14,26 @@ export function ProfitSharesPage() {
 
   return (
     <>
-      <header className="topbar">
+      <header className="flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-6 [&_h1]:text-2xl [&_h1]:font-black [&_h1]:tracking-normal [&_h1]:text-slate-950 sm:[&_h1]:text-3xl">
         <div>
-          <p className="eyebrow">AGREGO / Bagi Hasil</p>
+          <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-700">AGREGO / Bagi Hasil</p>
           <h1>Riwayat pembagian hasil</h1>
         </div>
-        <div className="operator-panel">
+        <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-right [&_span]:block [&_span]:text-xs [&_span]:font-bold [&_span]:text-emerald-700 [&_strong]:mt-1 [&_strong]:block [&_strong]:text-lg [&_strong]:font-black [&_strong]:text-slate-950">
           <span>Total dibagikan</span>
           <strong>Rp{totalAmount.toLocaleString('id-ID')}</strong>
         </div>
       </header>
 
-      <section className="deposit-workspace">
-        <div className="panel">
-          <div className="section-heading inline">
+      <section className="grid gap-5 lg:grid-cols-[1.4fr_0.6fr] lg:items-start">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between [&_h2]:text-lg [&_h2]:font-black [&_h2]:text-slate-950 [&>span]:text-sm [&>span]:font-bold [&>span]:text-slate-500">
             <div>
-              <p className="eyebrow">Riwayat Bagi Hasil</p>
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-700">Riwayat Bagi Hasil</p>
               <h2>Distribusi per kontrak</h2>
             </div>
             <button
-              className="primary-action"
+              className="inline-flex items-center justify-center rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-black text-white shadow-sm transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
               type="button"
               onClick={() =>
                 downloadCsv('laporan-bagi-hasil.csv', [
@@ -60,12 +61,15 @@ export function ProfitSharesPage() {
               Unduh CSV
             </button>
           </div>
-          <div className="candidate-list">
+          <div className="grid gap-3">
             {profitShares.map((row) => (
               <button
-                className={`candidate-card ${
-                  selectedMember === row.member ? 'selected' : ''
-                }`}
+                className={cn(
+                  'grid gap-3 rounded-xl border p-4 text-left transition hover:border-emerald-300 hover:bg-emerald-50/50 sm:grid-cols-[1fr_1fr_auto_auto] sm:items-center',
+                  selectedMember === row.member
+                    ? 'border-emerald-500 bg-emerald-50 shadow-sm'
+                    : 'border-slate-200 bg-white',
+                )}
                 key={`${row.member}-${row.contractId}`}
                 type="button"
                 onClick={() => setSelectedMember(row.member)}
@@ -78,32 +82,32 @@ export function ProfitSharesPage() {
                   <span>{row.commodity}</span>
                   <b>Rp{row.amount.toLocaleString('id-ID')}</b>
                 </div>
-                <span className="status-pill">QS {row.qualityScore}</span>
+                <span className="inline-flex w-fit items-center rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-black text-emerald-700">QS {row.qualityScore}</span>
                 <small>{formatKg(row.contributedKg)}</small>
               </button>
             ))}
           </div>
         </div>
 
-        <aside className="panel deposit-detail">
-          <div className="section-heading">
-            <p className="eyebrow">Detail Anggota</p>
+        <aside className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="grid gap-1 [&_h2]:text-lg [&_h2]:font-black [&_h2]:text-slate-950">
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-700">Detail Anggota</p>
             <h2>{selectedMember}</h2>
           </div>
-          <div className="detail-stack">
-            <div>
-              <span>Total Hak</span>
-              <strong>Rp{selectedAmount.toLocaleString('id-ID')}</strong>
-              <small>{selectedRows.length} kontrak selesai</small>
+          <div className="mt-4 grid gap-3">
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <span className="text-xs font-semibold text-slate-500">Total Hak</span>
+              <strong className="mt-1 block text-xl font-black text-slate-950">Rp{selectedAmount.toLocaleString('id-ID')}</strong>
+              <small className="mt-1 block text-xs font-semibold text-slate-500">{selectedRows.length} kontrak selesai</small>
             </div>
-            <div>
-              <span>Kontribusi</span>
-              <strong>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <span className="text-xs font-semibold text-slate-500">Kontribusi</span>
+              <strong className="mt-1 block text-xl font-black text-slate-950">
                 {formatKg(
                   selectedRows.reduce((total, row) => total + row.contributedKg, 0),
                 )}
               </strong>
-              <small>Berbasis volume dan quality score</small>
+              <small className="mt-1 block text-xs font-semibold text-slate-500">Berbasis volume dan quality score</small>
             </div>
           </div>
         </aside>

@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import type { Page } from '../../config/navigation'
 import type { Role } from '../../config/role-navigation'
-import AppSidebar from './app-sidebar'
-import AppHeader from './app-header'
+import AppSidebar from './side-nav'
+import AppHeader from './top-nav'
 import MobileNavigation from './mobile-navigation'
 import PageContainer from './page-container'
 
@@ -43,8 +43,7 @@ export default function AppShell({
   }
 
   return (
-    <div className={`app-layout-shell ${isCollapsed ? 'sidebar-collapsed' : ''}`}>
-      {/* Desktop Sidebar */}
+    <div className="min-h-screen bg-slate-50 text-slate-700 lg:flex">
       <AppSidebar
         currentPage={currentPage}
         onPageChange={onPageChange}
@@ -54,9 +53,7 @@ export default function AppShell({
         setIsCollapsed={setIsCollapsed}
       />
 
-      {/* Main Wrapper (Header + Main Content) */}
-      <div className="app-main-wrapper">
-        {/* Desktop Header */}
+      <div className={`min-w-0 flex-1 transition-[padding] duration-300 ${isCollapsed ? 'lg:pl-[72px]' : 'lg:pl-64'}`}>
         <AppHeader
           currentPage={currentPage}
           onPageChange={onPageChange}
@@ -65,13 +62,11 @@ export default function AppShell({
           onMobileMenuToggle={() => setIsMobileMenuOpen(true)}
         />
 
-        {/* Main Content Area */}
-        <main className="app-content-area">
+        <main className="min-h-[calc(100vh-64px)] px-4 pb-24 pt-4 sm:px-6 lg:pb-8 lg:pt-6">
           <PageContainer>{children}</PageContainer>
         </main>
       </div>
 
-      {/* Mobile Navigation (Bottom Nav + Overlay Drawer) */}
       <MobileNavigation
         currentPage={currentPage}
         onPageChange={onPageChange}

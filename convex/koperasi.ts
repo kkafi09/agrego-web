@@ -64,6 +64,7 @@ export const getDefaultKoperasi = query({
 
 export const saveDefaultKoperasi = mutation({
   args: {
+    adminId: v.id("users"),
     name: v.string(),
     location: v.string(),
     address: v.optional(v.string()),
@@ -72,6 +73,11 @@ export const saveDefaultKoperasi = mutation({
     leaderName: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    const admin = await ctx.db.get(args.adminId);
+    if (!admin) {
+      throw new Error("Admin koperasi tidak ditemukan.");
+    }
+
     let profile = await ctx.db.query("koperasiProfiles").first();
     if (profile) {
       await ctx.db.patch(profile._id, {
@@ -85,19 +91,8 @@ export const saveDefaultKoperasi = mutation({
       });
       return profile._id;
     } else {
-      let admin = await ctx.db.query("users").first();
-      if (!admin) {
-        const adminId = await ctx.db.insert("users", {
-          name: "Admin Koperasi",
-          email: "admin@koperasi.id",
-          role: "cooperative",
-          joinedAt: Date.now(),
-          passwordHash: "mock_hash",
-        });
-        admin = await ctx.db.get(adminId);
-      }
       return await ctx.db.insert("koperasiProfiles", {
-        adminId: admin!._id,
+        adminId: args.adminId,
         name: args.name,
         location: args.location,
         address: args.address,
