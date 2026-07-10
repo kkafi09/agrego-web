@@ -1,15 +1,45 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
 :root {
-  --bg: #f4f7f1;
+  /* HSL Color Definitions */
+  --background-hsl: 48, 24%, 97%; /* Warm neutral backdrop */
+  --foreground-hsl: 165, 35%, 11%; /* Deep agritech charcoal */
+  --primary-hsl: 153, 55%, 27%; /* Forest green */
+  --secondary-hsl: 143, 22%, 92%; /* Pale green-grey */
+  --muted-hsl: 215, 14%, 42%; /* Cool slate grey */
+  --accent-hsl: 29, 78%, 55%; /* Alert orange */
+  --destructive-hsl: 0, 70%, 48%; /* Error red */
+  --border-hsl: 140, 13%, 87%; /* Delicate grid line */
+  
+  /* Plain CSS Variable Mappings */
+  --bg: hsl(var(--background-hsl));
   --surface: #ffffff;
-  --text: #475569;
-  --text-strong: #17231d;
-  --muted: #64748b;
-  --border: #dbe4d4;
-  --track: #e8eee3;
-  --shadow-soft: 0 16px 40px rgba(23, 35, 29, 0.07);
-  font-family:
-    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
+  --text: hsl(var(--muted-hsl));
+  --text-strong: hsl(var(--foreground-hsl));
+  --muted: hsl(var(--muted-hsl));
+  
+  --primary: hsl(var(--primary-hsl));
+  --primary-hover: hsl(153, 55%, 20%);
+  --secondary: hsl(var(--secondary-hsl));
+  --secondary-text: hsl(153, 45%, 20%);
+  
+  --accent: hsl(var(--accent-hsl));
+  --destructive: hsl(var(--destructive-hsl));
+  --destructive-hover: hsl(0, 70%, 40%);
+  
+  --border: hsl(var(--border-hsl));
+  --track: hsl(var(--secondary-hsl));
+  
+  /* Shadows and Borders */
+  --shadow-soft: 0 1px 3px rgba(23, 35, 29, 0.05), 0 1px 2px rgba(23, 35, 29, 0.02);
+  --shadow-popup: 0 10px 25px -5px rgba(23, 35, 29, 0.1), 0 8px 10px -6px rgba(23, 35, 29, 0.05);
+  
+  --radius-card: 12px;
+  --radius-button: 8px;
+  --radius-input: 8px;
+  --radius-badge: 9999px;
+
+  font-family: 'Plus Jakarta Sans', Inter, system-ui, -apple-system, sans-serif;
   color: var(--text);
   background: var(--bg);
   font-synthesis: none;
@@ -20,21 +50,60 @@
 
 * {
   box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
 body {
   min-width: 320px;
+  min-height: 100vh;
   min-height: 100svh;
-  margin: 0;
+  overflow-x: hidden;
 }
 
 button,
 input,
 textarea,
 select {
-  font: inherit;
+  font-family: inherit;
+  color: inherit;
 }
 
 #root {
+  min-height: 100vh;
   min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--border-hsl));
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-hsl), 0.3);
+}
+
+/* Utility Helpers */
+.text-success {
+  color: var(--primary) !important;
+}
+
+.text-warning {
+  color: var(--accent) !important;
+}
+
+.text-danger {
+  color: var(--destructive) !important;
 }

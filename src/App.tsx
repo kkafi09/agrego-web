@@ -1,7 +1,23 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import './App.css'
 import { useQuery, useMutation } from 'convex/react'
 import { api } from '../convex/_generated/api'
+
+import AppShell from './components/layout/app-shell'
+import MetricCard from './components/dashboard/metric-card'
+import ContractProgressCard from './components/dashboard/contract-progress-card'
+import ActionRequiredList from './components/dashboard/action-required-list'
+import CommodityStockList from './components/dashboard/commodity-stock-list'
+import DataTable from './components/data-display/data-table'
+import StatusBadge from './components/data-display/status-badge'
+import NumberUnitInput from './components/forms/number-unit-input'
+import PageHeader from './components/layout/page-header'
+import {
+  LayoutDashboard,
+  Wheat,
+  TrendingUp,
+  AlertTriangle
+} from 'lucide-react'
 
 type Page =
   | 'dashboard'
@@ -325,29 +341,6 @@ const initialDepositRecords: DepositRecord[] = [
   },
 ]
 
-const navItems: { page: Page; label: string }[] = [
-  { page: 'dashboard', label: 'Dashboard' },
-  { page: 'deposits', label: 'Riwayat Setoran' },
-  { page: 'newDeposit', label: 'Setoran Baru' },
-  { page: 'qcHistory', label: 'Riwayat QC' },
-  { page: 'qcDepositDetail', label: 'Detail Setoran QC' },
-  { page: 'qcForm', label: 'Form QC' },
-  { page: 'qcResultDetail', label: 'Detail Hasil QC' },
-  { page: 'allocation', label: 'Alokasi Stok' },
-  { page: 'allocationStatus', label: 'Status Alokasi' },
-  { page: 'contracts', label: 'Kontrak' },
-  { page: 'newContract', label: 'Kontrak Baru' },
-  { page: 'contractDetail', label: 'Detail Kontrak' },
-  { page: 'depositReport', label: 'Laporan Setoran' },
-  { page: 'profitShares', label: 'Bagi Hasil' },
-  { page: 'login', label: 'Login' },
-  { page: 'register', label: 'Daftar' },
-  { page: 'resetPassword', label: 'Reset Password' },
-  { page: 'profile', label: 'Profil' },
-  { page: 'members', label: 'Anggota' },
-  { page: 'commodities', label: 'Komoditas' },
-  { page: 'cooperativeProfile', label: 'Profil Koperasi' },
-]
 
 const memberOptions = [
   'Ibu Sari Wulandari',
@@ -633,167 +626,115 @@ function validateContractForm(form: ContractFormState) {
 function DashboardPage() {
   return (
     <>
-      <header className="topbar">
-        <div>
-          <p className="eyebrow">AGREGO / Dashboard Koperasi</p>
-          <h1>Kapasitas pasok hari ini</h1>
-        </div>
-        <div className="operator-panel" aria-label="Profil koperasi aktif">
-          <span>Koperasi Tani Makmur</span>
-          <strong>Jawa Barat</strong>
-        </div>
-      </header>
+      <PageHeader
+        title="Dashboard Koperasi"
+        subtitle="Kapasitas pasok dan progres kontrak hari ini"
+      />
 
-      <section className="overview-grid" aria-label="Ringkasan operasional">
-        <article className="metric-card">
-          <span>Total Stok Tercatat</span>
-          <strong>{formatKg(totalStock)}</strong>
-          <small>{formatKg(totalReady)} siap dialokasi</small>
-        </article>
-        <article className="metric-card">
-          <span>Quality Score Rata-rata</span>
-          <strong>{averageQuality}</strong>
-          <small>Di atas standar kontrak aktif</small>
-        </article>
-        <article className="metric-card">
-          <span>Progres Kontrak Aktif</span>
-          <strong>{overallProgress}%</strong>
-          <small>{contracts.length} kontrak dalam pemenuhan</small>
-        </article>
-        <article className="metric-card alert">
-          <span>Notifikasi Kontrak</span>
-          <strong>{notifications.length}</strong>
-          <small>Perlu ditinjau pengurus</small>
-        </article>
-      </section>
+      <div className="dashboard-metric-grid">
+        <MetricCard
+          title="Total Stok Tercatat"
+          value={formatKg(totalStock)}
+          description={`${formatKg(totalReady)} siap dialokasi`}
+          icon={Wheat}
+        />
+        <MetricCard
+          title="Quality Score Rata-rata"
+          value={averageQuality}
+          description="Di atas standar kontrak aktif"
+          icon={TrendingUp}
+        />
+        <MetricCard
+          title="Progres Kontrak Aktif"
+          value={`${overallProgress}%`}
+          description={`${contracts.length} kontrak dalam pemenuhan`}
+          icon={LayoutDashboard}
+        />
+        <MetricCard
+          title="Notifikasi Kontrak"
+          value={notifications.length}
+          description="Perlu ditinjau pengurus"
+          icon={AlertTriangle}
+          isAlert={notifications.length > 0}
+        />
+      </div>
 
-      <section className="content-grid">
-        <div className="panel stock-panel">
-          <div className="section-heading">
-            <p className="eyebrow">Ringkasan Stok</p>
-            <h2>Komoditas dan kualitas terkini</h2>
+      <div className="dashboard-sections-container">
+        {/* Commodity Stock summary panel */}
+        <section className="dashboard-panel">
+          <div className="panel-title-container">
+            <span className="panel-eyebrow">Ringkasan Stok</span>
+            <h2 className="panel-title">Komoditas dan kualitas terkini</h2>
           </div>
-          <div className="stock-list">
-            {stockSummaries.map((stock) => (
-              <article className="stock-row" key={stock.commodity}>
-                <div>
-                  <strong>{stock.commodity}</strong>
-                  <span>{stock.trend}</span>
-                </div>
-                <div className="stock-values">
-                  <span>{formatKg(stock.totalKg)}</span>
-                  <b>QS {stock.quality}</b>
-                </div>
-                <div
-                  className="quality-bar"
-                  aria-label={`Quality score ${stock.quality}`}
-                >
-                  <span style={{ width: `${stock.quality}%` }} />
-                </div>
-              </article>
-            ))}
-          </div>
-        </div>
+          <CommodityStockList stocks={stockSummaries} />
+        </section>
 
-        <div className="panel notification-panel">
-          <div className="section-heading">
-            <p className="eyebrow">Notifikasi Kontrak</p>
-            <h2>Peluang buyer masuk</h2>
+        {/* Action required / Notification panel */}
+        <section className="dashboard-panel">
+          <div className="panel-title-container">
+            <span className="panel-eyebrow">Notifikasi Kontrak</span>
+            <h2 className="panel-title">Peluang buyer masuk</h2>
           </div>
-          <div className="notification-list">
-            {notifications.map((notification) => (
-              <article className="notification-item" key={notification.title}>
-                <div className="pulse" aria-hidden="true" />
-                <div>
-                  <strong>{notification.title}</strong>
-                  <p>{notification.body}</p>
-                  <time>{notification.time}</time>
-                </div>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
+          <ActionRequiredList notifications={notifications} />
+        </section>
+      </div>
 
-      <section className="panel contracts-panel">
-        <div className="section-heading inline">
+      <section className="dashboard-panel" style={{ marginBottom: '20px' }}>
+        <div className="panel-title-container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
-            <p className="eyebrow">Progres Kontrak</p>
-            <h2>Kontrak aktif dan pemenuhan volume</h2>
+            <span className="panel-eyebrow">Progres Kontrak</span>
+            <h2 className="panel-title">Kontrak aktif dan pemenuhan volume</h2>
           </div>
-          <span>{formatKg(activeFulfilled)} terkumpul</span>
+          <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-strong)' }}>
+            {formatKg(activeFulfilled)} terkumpul
+          </span>
         </div>
-        <div className="contract-list">
-          {contracts.map((contract) => {
-            const percent = progressPercent(
-              contract.fulfilledKg,
-              contract.targetKg,
-            )
-
-            return (
-              <article className="contract-row" key={contract.id}>
-                <div className="contract-main">
-                  <span className={`status-pill ${contract.status.toLowerCase()}`}>
-                    {contract.status}
-                  </span>
-                  <div>
-                    <strong>{contract.buyer}</strong>
-                    <p>
-                      {contract.id} / {contract.commodity} / minimum QS{' '}
-                      {contract.minimumQuality}
-                    </p>
-                  </div>
-                </div>
-                <div className="contract-progress">
-                  <div className="progress-meta">
-                    <span>
-                      {formatKg(contract.fulfilledKg)} dari{' '}
-                      {formatKg(contract.targetKg)}
-                    </span>
-                    <strong>{percent}%</strong>
-                  </div>
-                  <div className="progress-track">
-                    <span style={{ width: `${percent}%` }} />
-                  </div>
-                  <small>Tenggat {contract.deadline}</small>
-                </div>
-              </article>
-            )
-          })}
+        
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '16px', marginTop: '12px' }}>
+          {contracts.map((contract) => (
+            <ContractProgressCard
+              key={contract.id}
+              id={contract.id}
+              buyer={contract.buyer}
+              commodity={contract.commodity}
+              fulfilledKg={contract.fulfilledKg}
+              targetKg={contract.targetKg}
+              minimumQuality={contract.minimumQuality}
+              deadline={contract.deadline}
+              status={contract.status}
+            />
+          ))}
         </div>
       </section>
 
-      <section className="panel pools-panel">
-        <div className="section-heading inline">
-          <div>
-            <p className="eyebrow">Status Supply Pool</p>
-            <h2>Alokasi stok ke portofolio kontrak</h2>
-          </div>
-          <span>Real-time mock data</span>
+      <section className="dashboard-panel">
+        <div className="panel-title-container">
+          <span className="panel-eyebrow">Status Supply Pool</span>
+          <h2 className="panel-title">Alokasi stok ke portofolio kontrak</h2>
         </div>
-        <div className="pool-grid">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginTop: '12px' }}>
           {supplyPools.map((pool) => (
-            <article className="pool-card" key={pool.contractId}>
+            <article className="pool-card" key={pool.contractId} style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '16px', border: '1px solid var(--border)', borderRadius: 'var(--radius-card)', boxShadow: 'none' }}>
               <div>
-                <span>{pool.contractId}</span>
-                <strong>{pool.commodity}</strong>
+                <span style={{ fontSize: '11px', color: 'var(--muted)', fontWeight: 700 }}>{pool.contractId}</span>
+                <strong style={{ display: 'block', fontSize: '14px', color: 'var(--text-strong)', marginTop: '2px' }}>{pool.commodity}</strong>
               </div>
-              <dl>
+              <dl style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px 8px', margin: 0 }}>
                 <div>
-                  <dt>Teralokasi</dt>
-                  <dd>{formatKg(pool.allocatedKg)}</dd>
+                  <dt style={{ fontSize: '11px', color: 'var(--muted)' }}>Teralokasi</dt>
+                  <dd style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-strong)' }}>{formatKg(pool.allocatedKg)}</dd>
                 </div>
                 <div>
-                  <dt>Kandidat</dt>
-                  <dd>{formatKg(pool.candidateKg)}</dd>
+                  <dt style={{ fontSize: '11px', color: 'var(--muted)' }}>Kandidat</dt>
+                  <dd style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-strong)' }}>{formatKg(pool.candidateKg)}</dd>
                 </div>
                 <div>
-                  <dt>Anggota</dt>
-                  <dd>{pool.contributors}</dd>
+                  <dt style={{ fontSize: '11px', color: 'var(--muted)' }}>Anggota</dt>
+                  <dd style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-strong)' }}>{pool.contributors}</dd>
                 </div>
                 <div>
-                  <dt>Pool QS</dt>
-                  <dd>{pool.score}</dd>
+                  <dt style={{ fontSize: '11px', color: 'var(--muted)' }}>Pool QS</dt>
+                  <dd style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-strong)' }}>{pool.score}</dd>
                 </div>
               </dl>
             </article>
@@ -806,6 +747,8 @@ function DashboardPage() {
 
 function DepositHistoryPage({ records }: { records: DepositRecord[] }) {
   const [selectedDepositId, setSelectedDepositId] = useState(records[0].id)
+  const [searchTerm, setSearchTerm] = useState('')
+
   const totals = useMemo(
     () => ({
       totalWeight: records.reduce(
@@ -822,135 +765,158 @@ function DepositHistoryPage({ records }: { records: DepositRecord[] }) {
     }),
     [records],
   )
+
   const selectedDeposit =
     records.find((deposit) => deposit.id === selectedDepositId) ?? records[0]
 
+  const filteredRecords = useMemo(() => {
+    if (!searchTerm.trim()) return records
+    const term = searchTerm.toLowerCase()
+    return records.filter(
+      (r) =>
+        r.id.toLowerCase().includes(term) ||
+        r.member.toLowerCase().includes(term) ||
+        r.commodity.toLowerCase().includes(term) ||
+        r.status.toLowerCase().includes(term)
+    )
+  }, [records, searchTerm])
+
+  const columns = [
+    {
+      header: 'ID',
+      render: (deposit: DepositRecord) => <span className="record-id">{deposit.id}</span>
+    },
+    {
+      header: 'Anggota',
+      render: (deposit: DepositRecord) => (
+        <div>
+          <strong style={{ color: 'var(--text-strong)' }}>{deposit.member}</strong>
+          <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '2px' }}>
+            Petugas: {deposit.collector}
+          </div>
+        </div>
+      )
+    },
+    {
+      header: 'Komoditas',
+      render: (deposit: DepositRecord) => <span>{deposit.commodity}</span>
+    },
+    {
+      header: 'Berat',
+      render: (deposit: DepositRecord) => <span>{formatKg(deposit.weightKg)}</span>
+    },
+    {
+      header: 'Tanggal',
+      render: (deposit: DepositRecord) => <time style={{ fontSize: '12px' }}>{deposit.submittedAt}</time>
+    },
+    {
+      header: 'Quality',
+      render: (deposit: DepositRecord) => (
+        <span>{deposit.qualityScore === null ? '-' : `QS ${deposit.qualityScore}`}</span>
+      )
+    },
+    {
+      header: 'Status',
+      render: (deposit: DepositRecord) => <StatusBadge status={deposit.status} />
+    }
+  ]
+
   return (
     <>
-      <header className="topbar">
-        <div>
-          <p className="eyebrow">AGREGO / Pencatatan Setoran</p>
-          <h1>Riwayat setoran anggota</h1>
-        </div>
-        <div className="operator-panel" aria-label="Ringkasan setoran hari ini">
-          <span>Total setoran tercatat</span>
-          <strong>{records.length} transaksi</strong>
-        </div>
-      </header>
+      <PageHeader
+        title="Riwayat Setoran Anggota"
+        subtitle={`Total setoran tercatat: ${records.length} transaksi`}
+      />
 
-      <section className="overview-grid" aria-label="Ringkasan riwayat setoran">
-        <article className="metric-card">
-          <span>Total Volume</span>
-          <strong>{formatKg(totals.totalWeight)}</strong>
-          <small>Dari semua komoditas</small>
-        </article>
-        <article className="metric-card">
-          <span>Menunggu QC</span>
-          <strong>{totals.waitingQc}</strong>
-          <small>Perlu pemeriksaan kualitas</small>
-        </article>
-        <article className="metric-card">
-          <span>Lolos QC</span>
-          <strong>{totals.ready}</strong>
-          <small>Siap masuk supply pool</small>
-        </article>
-        <article className="metric-card">
-          <span>Sudah Dialokasi</span>
-          <strong>{totals.allocated}</strong>
-          <small>Menjadi aset kontrak</small>
-        </article>
+      <section className="dashboard-metric-grid" aria-label="Ringkasan riwayat setoran">
+        <MetricCard
+          title="Total Volume"
+          value={formatKg(totals.totalWeight)}
+          description="Dari semua komoditas"
+          icon={Wheat}
+        />
+        <MetricCard
+          title="Menunggu QC"
+          value={totals.waitingQc}
+          description="Perlu pemeriksaan kualitas"
+          icon={AlertTriangle}
+          isAlert={totals.waitingQc > 0}
+        />
+        <MetricCard
+          title="Lolos QC"
+          value={totals.ready}
+          description="Siap masuk supply pool"
+          icon={TrendingUp}
+        />
+        <MetricCard
+          title="Sudah Dialokasi"
+          value={totals.allocated}
+          description="Menjadi aset kontrak"
+          icon={LayoutDashboard}
+        />
       </section>
 
-      <section className="deposit-workspace">
-        <div className="panel deposit-panel">
-          <div className="section-heading inline">
-            <div>
-              <p className="eyebrow">Riwayat Setoran</p>
-              <h2>Daftar panen yang diterima koperasi</h2>
-            </div>
-            <span>Data tiruan</span>
+      <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 0.6fr', gap: '20px', alignItems: 'start' }} className="deposit-workspace">
+        <div className="dashboard-panel">
+          <div className="panel-title-container">
+            <span className="panel-eyebrow">Daftar Panen</span>
+            <h2 className="panel-title">Daftar panen yang diterima koperasi</h2>
           </div>
-          <div className="deposit-table" role="table" aria-label="Riwayat setoran">
-            <div className="deposit-table-head" role="row">
-              <span>ID</span>
-              <span>Anggota</span>
-              <span>Komoditas</span>
-              <span>Berat</span>
-              <span>Tanggal</span>
-              <span>Quality</span>
-              <span>Status</span>
+          
+          <DataTable
+            data={filteredRecords}
+            columns={columns}
+            keyExtractor={(item) => item.id}
+            onRowClick={(item) => setSelectedDepositId(item.id)}
+            selectedRowKey={selectedDeposit?.id}
+            searchPlaceholder="Cari ID, anggota, komoditas..."
+            searchValue={searchTerm}
+            onSearchChange={setSearchTerm}
+          />
+        </div>
+
+        {selectedDeposit && (
+          <aside className="dashboard-panel" aria-label="Detail setoran">
+            <div className="panel-title-container">
+              <span className="panel-eyebrow">Detail Setoran</span>
+              <h2 className="panel-title">{selectedDeposit.id}</h2>
             </div>
-            {records.map((deposit) => (
-              <button
-                aria-pressed={selectedDeposit.id === deposit.id}
-                className={`deposit-row ${
-                  selectedDeposit.id === deposit.id ? 'selected' : ''
-                }`}
-                key={deposit.id}
-                role="row"
-                type="button"
-                onClick={() => setSelectedDepositId(deposit.id)}
-              >
-                <span className="record-id">{deposit.id}</span>
-                <div>
-                  <strong>{deposit.member}</strong>
-                  <small>Petugas {deposit.collector}</small>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '12px' }}>
+              <div style={{ borderBottom: '1px solid var(--border)', paddingBottom: '12px' }}>
+                <span style={{ fontSize: '11px', color: 'var(--muted)', fontWeight: 700, display: 'block', textTransform: 'uppercase' }}>Anggota</span>
+                <strong style={{ fontSize: '15px', color: 'var(--text-strong)', display: 'block', marginTop: '2px' }}>{selectedDeposit.member}</strong>
+                <span style={{ fontSize: '12px', color: 'var(--muted)', display: 'block', marginTop: '2px' }}>
+                  {selectedDeposit.phone} / {selectedDeposit.origin}
+                </span>
+              </div>
+              
+              <div style={{ borderBottom: '1px solid var(--border)', paddingBottom: '12px' }}>
+                <span style={{ fontSize: '11px', color: 'var(--muted)', fontWeight: 700, display: 'block', textTransform: 'uppercase' }}>Komoditas</span>
+                <strong style={{ fontSize: '15px', color: 'var(--text-strong)', display: 'block', marginTop: '2px' }}>{selectedDeposit.commodity}</strong>
+                <span style={{ fontSize: '12px', color: 'var(--muted)', display: 'block', marginTop: '2px' }}>{formatKg(selectedDeposit.weightKg)} diterima</span>
+              </div>
+              
+              <div style={{ borderBottom: '1px solid var(--border)', paddingBottom: '12px' }}>
+                <span style={{ fontSize: '11px', color: 'var(--muted)', fontWeight: 700, display: 'block', textTransform: 'uppercase' }}>Status Operasional</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
+                  <StatusBadge status={selectedDeposit.status} />
+                  <span style={{ fontSize: '12px', color: 'var(--muted)' }}>
+                    {selectedDeposit.qualityScore === null
+                      ? 'Quality belum tersedia'
+                      : `QS ${selectedDeposit.qualityScore}`}
+                  </span>
                 </div>
-                <span>{deposit.commodity}</span>
-                <span>{formatKg(deposit.weightKg)}</span>
-                <time>{deposit.submittedAt}</time>
-                <span>
-                  {deposit.qualityScore === null
-                    ? '-'
-                    : `QS ${deposit.qualityScore}`}
-                </span>
-                <span
-                  className={`status-pill deposit-status ${deposit.status
-                    .toLowerCase()
-                    .replaceAll(' ', '-')}`}
-                >
-                  {deposit.status}
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <aside className="panel deposit-detail" aria-label="Detail setoran">
-          <div className="section-heading">
-            <p className="eyebrow">Detail Setoran</p>
-            <h2>{selectedDeposit.id}</h2>
-          </div>
-          <div className="detail-stack">
-            <div>
-              <span>Anggota</span>
-              <strong>{selectedDeposit.member}</strong>
-              <small>
-                {selectedDeposit.phone} / {selectedDeposit.origin}
-              </small>
+              </div>
+              
+              <div>
+                <span style={{ fontSize: '11px', color: 'var(--muted)', fontWeight: 700, display: 'block', textTransform: 'uppercase' }}>Catatan</span>
+                <p style={{ fontSize: '13px', color: 'var(--text)', marginTop: '4px', lineHeight: 1.5 }}>{selectedDeposit.notes}</p>
+              </div>
             </div>
-            <div>
-              <span>Komoditas</span>
-              <strong>{selectedDeposit.commodity}</strong>
-              <small>{formatKg(selectedDeposit.weightKg)} diterima</small>
-            </div>
-            <div>
-              <span>Status Operasional</span>
-              <strong>{selectedDeposit.status}</strong>
-              <small>
-                Quality{' '}
-                {selectedDeposit.qualityScore === null
-                  ? 'belum tersedia'
-                  : `QS ${selectedDeposit.qualityScore}`}
-              </small>
-            </div>
-            <div>
-              <span>Catatan</span>
-              <p>{selectedDeposit.notes}</p>
-            </div>
-          </div>
-        </aside>
-      </section>
+          </aside>
+        )}
+      </div>
     </>
   )
 }
@@ -971,7 +937,7 @@ function NewDepositPage({
   })
   const [saved, setSaved] = useState(false)
   const [errors, setErrors] = useState<DepositFormErrors>({})
-  const estimatedQueue = form.commodity === 'Kopi Robusta' ? 'QC kopi' : 'QC umum'
+  const estimatedQueue = form.commodity === 'Kopi Robusta' ? 'QC Kopi' : 'QC Umum'
 
   function updateField(field: keyof DepositFormState, value: string) {
     setSaved(false)
@@ -988,20 +954,14 @@ function NewDepositPage({
 
   return (
     <>
-      <header className="topbar">
-        <div>
-          <p className="eyebrow">AGREGO / Pencatatan Setoran</p>
-          <h1>Form setoran baru</h1>
-        </div>
-        <div className="operator-panel" aria-label="Status form setoran">
-          <span>Antrean pemeriksaan</span>
-          <strong>{estimatedQueue}</strong>
-        </div>
-      </header>
+      <PageHeader
+        title="Form Setoran Baru"
+        subtitle={`Antrean Pemeriksaan: ${estimatedQueue}`}
+      />
 
-      <section className="form-workspace">
+      <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 0.6fr', gap: '20px', alignItems: 'start' }} className="form-workspace">
         <form
-          className="panel deposit-form"
+          className="dashboard-panel"
           onSubmit={(event) => {
             event.preventDefault()
             const nextErrors = validateDepositForm(form)
@@ -1027,15 +987,17 @@ function NewDepositPage({
             })
             setSaved(true)
           }}
+          style={{ gap: '16px' }}
         >
-          <div className="section-heading">
-            <p className="eyebrow">Input Setoran</p>
-            <h2>Data panen anggota</h2>
+          <div className="panel-title-container">
+            <span className="panel-eyebrow">Input Setoran</span>
+            <h2 className="panel-title">Data panen anggota</h2>
           </div>
 
-          <label>
-            <span>Nama Anggota</span>
+          <div className="form-field-container">
+            <label className="form-field-label">Nama Anggota</label>
             <select
+              className="form-select-control"
               aria-invalid={Boolean(errors.member)}
               value={form.member}
               onChange={(event) => updateField('member', event.target.value)}
@@ -1044,12 +1006,13 @@ function NewDepositPage({
                 <option key={member}>{member}</option>
               ))}
             </select>
-            {errors.member ? <small className="field-error">{errors.member}</small> : null}
-          </label>
+            {errors.member ? <small className="form-field-error">{errors.member}</small> : null}
+          </div>
 
-          <label>
-            <span>Komoditas</span>
+          <div className="form-field-container">
+            <label className="form-field-label">Komoditas</label>
             <select
+              className="form-select-control"
               aria-invalid={Boolean(errors.commodity)}
               value={form.commodity}
               onChange={(event) => updateField('commodity', event.target.value)}
@@ -1059,27 +1022,25 @@ function NewDepositPage({
               ))}
             </select>
             {errors.commodity ? (
-              <small className="field-error">{errors.commodity}</small>
+              <small className="form-field-error">{errors.commodity}</small>
             ) : null}
-          </label>
+          </div>
 
-          <div className="form-grid">
-            <label>
-              <span>Berat Setoran (kg)</span>
+          <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
+            <NumberUnitInput
+              id="weightKg"
+              label="Berat Setoran"
+              unit="kg"
+              value={form.weightKg}
+              onChange={(val) => updateField('weightKg', val)}
+              error={errors.weightKg}
+              min="1"
+            />
+            
+            <div className="form-field-container">
+              <label className="form-field-label">Tanggal Setor</label>
               <input
-                aria-invalid={Boolean(errors.weightKg)}
-                min="1"
-                type="number"
-                value={form.weightKg}
-                onChange={(event) => updateField('weightKg', event.target.value)}
-              />
-              {errors.weightKg ? (
-                <small className="field-error">{errors.weightKg}</small>
-              ) : null}
-            </label>
-            <label>
-              <span>Tanggal Setor</span>
-              <input
+                className="form-input-control"
                 aria-invalid={Boolean(errors.submittedAt)}
                 type="date"
                 value={form.submittedAt}
@@ -1088,15 +1049,16 @@ function NewDepositPage({
                 }
               />
               {errors.submittedAt ? (
-                <small className="field-error">{errors.submittedAt}</small>
+                <small className="form-field-error">{errors.submittedAt}</small>
               ) : null}
-            </label>
+            </div>
           </div>
 
-          <div className="form-grid">
-            <label>
-              <span>Petugas Penerima</span>
+          <div className="form-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
+            <div className="form-field-container">
+              <label className="form-field-label">Petugas Penerima</label>
               <select
+                className="form-select-control"
                 aria-invalid={Boolean(errors.collector)}
                 value={form.collector}
                 onChange={(event) => updateField('collector', event.target.value)}
@@ -1106,69 +1068,72 @@ function NewDepositPage({
                 ))}
               </select>
               {errors.collector ? (
-                <small className="field-error">{errors.collector}</small>
+                <small className="form-field-error">{errors.collector}</small>
               ) : null}
-            </label>
-            <label>
-              <span>Asal Dusun</span>
+            </div>
+            
+            <div className="form-field-container">
+              <label className="form-field-label">Asal Dusun</label>
               <input
+                className="form-input-control"
                 aria-invalid={Boolean(errors.origin)}
                 value={form.origin}
                 onChange={(event) => updateField('origin', event.target.value)}
               />
               {errors.origin ? (
-                <small className="field-error">{errors.origin}</small>
+                <small className="form-field-error">{errors.origin}</small>
               ) : null}
-            </label>
+            </div>
           </div>
 
-          <label>
-            <span>Catatan Awal</span>
+          <div className="form-field-container">
+            <label className="form-field-label">Catatan Awal</label>
             <textarea
+              className="form-textarea-control"
               aria-invalid={Boolean(errors.notes)}
               rows={4}
               value={form.notes}
               onChange={(event) => updateField('notes', event.target.value)}
               placeholder="Mis. kondisi kemasan, kadar kering awal, atau antrean QC."
             />
-            {errors.notes ? <small className="field-error">{errors.notes}</small> : null}
-          </label>
+            {errors.notes ? <small className="form-field-error">{errors.notes}</small> : null}
+          </div>
 
-          <button className="primary-action" type="submit">
+          <button className="btn-primary" type="submit" style={{ width: '100%' }}>
             Simpan Draft Setoran
           </button>
         </form>
 
-        <aside className="panel form-preview" aria-label="Preview setoran">
-          <div className="section-heading">
-            <p className="eyebrow">Preview</p>
-            <h2>Ringkasan setoran</h2>
+        <aside className="dashboard-panel" aria-label="Preview setoran">
+          <div className="panel-title-container">
+            <span className="panel-eyebrow">Preview</span>
+            <h2 className="panel-title">Ringkasan setoran</h2>
           </div>
-          <dl>
-            <div>
-              <dt>Anggota</dt>
-              <dd>{form.member}</dd>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: '8px' }}>
+              <span style={{ fontSize: '12px', color: 'var(--muted)' }}>Anggota</span>
+              <strong style={{ fontSize: '13px', color: 'var(--text-strong)' }}>{form.member}</strong>
             </div>
-            <div>
-              <dt>Komoditas</dt>
-              <dd>{form.commodity}</dd>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: '8px' }}>
+              <span style={{ fontSize: '12px', color: 'var(--muted)' }}>Komoditas</span>
+              <strong style={{ fontSize: '13px', color: 'var(--text-strong)' }}>{form.commodity}</strong>
             </div>
-            <div>
-              <dt>Berat</dt>
-              <dd>{form.weightKg || '0'} kg</dd>
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', paddingBottom: '8px' }}>
+              <span style={{ fontSize: '12px', color: 'var(--muted)' }}>Berat</span>
+              <strong style={{ fontSize: '13px', color: 'var(--text-strong)' }}>{form.weightKg || '0'} kg</strong>
             </div>
-            <div>
-              <dt>Status Awal</dt>
-              <dd>Menunggu QC</dd>
+            <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '8px' }}>
+              <span style={{ fontSize: '12px', color: 'var(--muted)' }}>Status Awal</span>
+              <strong style={{ fontSize: '13px', color: 'var(--primary)' }}>Tercatat</strong>
             </div>
-          </dl>
+          </div>
           {saved ? (
-            <p className="success-note">
+            <p style={{ marginTop: '12px', fontSize: '12px', color: 'var(--primary)', fontWeight: 600 }}>
               Draft setoran siap masuk riwayat dan antrean Quality Check.
             </p>
           ) : null}
         </aside>
-      </section>
+      </div>
     </>
   )
 }
@@ -2638,7 +2603,7 @@ function ProfitSharesPage() {
   )
 }
 
-function LoginPage({ onLogin }: { onLogin: (user: MockUser) => void }) {
+function LoginPage({ onLogin, goToPage }: { onLogin: (user: MockUser) => void; goToPage: (page: Page) => void }) {
   const [email, setEmail] = useState('operator@koperasi.id')
   const [password, setPassword] = useState('password')
   const [role, setRole] = useState<MockUser['role']>('Koperasi')
@@ -2700,13 +2665,19 @@ function LoginPage({ onLogin }: { onLogin: (user: MockUser) => void }) {
           <button className="primary-action" type="submit">
             Masuk
           </button>
+          <div className="auth-footer-links">
+            <span>Belum memiliki akun?</span>
+            <button type="button" onClick={() => goToPage('register')}>Daftar</button>
+            <span className="divider">•</span>
+            <button type="button" onClick={() => goToPage('resetPassword')}>Lupa password?</button>
+          </div>
         </form>
       </section>
     </>
   )
 }
 
-function RegisterPage() {
+function RegisterPage({ goToPage }: { goToPage: (page: Page) => void }) {
   const [name, setName] = useState('Admin Koperasi')
   const [email, setEmail] = useState('admin@koperasi.id')
   const [role, setRole] = useState<MockUser['role']>('Admin')
@@ -2783,13 +2754,17 @@ function RegisterPage() {
           <button className="primary-action" type="submit">
             Buat Akun
           </button>
+          <div className="auth-footer-links">
+            <span>Sudah memiliki akun?</span>
+            <button type="button" onClick={() => goToPage('login')}>Masuk</button>
+          </div>
         </form>
       </section>
     </>
   )
 }
 
-function ResetPasswordPage() {
+function ResetPasswordPage({ goToPage }: { goToPage: (page: Page) => void }) {
   const [email, setEmail] = useState('operator@koperasi.id')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -2853,6 +2828,10 @@ function ResetPasswordPage() {
           <button className="primary-action" type="submit">
             Proses Reset
           </button>
+          <div className="auth-footer-links">
+            <span>Kembali ke</span>
+            <button type="button" onClick={() => goToPage('login')}>Halaman Masuk</button>
+          </div>
         </form>
       </section>
     </>
@@ -3596,35 +3575,25 @@ function App() {
   const [records, setRecords] = useState<DepositRecord[]>(initialDepositRecords)
   const [user, setUser] = useState<MockUser | null>(null)
 
+  useEffect(() => {
+    // If not logged in, only allow auth pages
+    if (!user && !['login', 'register', 'resetPassword'].includes(page)) {
+      setPage('login')
+    }
+  }, [user, page])
+
+  const handleLogout = () => {
+    setUser(null)
+    setPage('login')
+  }
+
   return (
-    <main className="dashboard-shell">
-      <nav className="app-nav" aria-label="Navigasi utama">
-        <strong>{user ? `${user.name} / ${user.role}` : 'AGREGO'}</strong>
-        <div>
-          {navItems.map((item) => (
-            <button
-              aria-current={page === item.page ? 'page' : undefined}
-              className={page === item.page ? 'active' : ''}
-              key={item.page}
-              type="button"
-              onClick={() => setPage(item.page)}
-            >
-              {item.label}
-            </button>
-          ))}
-          {user ? (
-            <button
-              type="button"
-              onClick={() => {
-                setUser(null)
-                setPage('login')
-              }}
-            >
-              Logout
-            </button>
-          ) : null}
-        </div>
-      </nav>
+    <AppShell
+      currentPage={page}
+      onPageChange={setPage}
+      user={user}
+      onLogout={handleLogout}
+    >
       {page === 'dashboard' ? <DashboardPage /> : null}
       {page === 'deposits' ? <DepositHistoryPage records={records} /> : null}
       {page === 'newDeposit' ? (
@@ -3652,15 +3621,16 @@ function App() {
             setUser(nextUser)
             setPage('dashboard')
           }}
+          goToPage={setPage}
         />
       ) : null}
-      {page === 'register' ? <RegisterPage /> : null}
-      {page === 'resetPassword' ? <ResetPasswordPage /> : null}
+      {page === 'register' ? <RegisterPage goToPage={setPage} /> : null}
+      {page === 'resetPassword' ? <ResetPasswordPage goToPage={setPage} /> : null}
       {page === 'profile' ? <ProfilePage user={user} onSave={setUser} /> : null}
       {page === 'members' ? <MembersPage /> : null}
       {page === 'commodities' ? <CommoditiesPage /> : null}
       {page === 'cooperativeProfile' ? <CooperativeProfilePage /> : null}
-    </main>
+    </AppShell>
   )
 }
 
