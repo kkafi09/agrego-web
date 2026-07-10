@@ -1,0 +1,179 @@
+/* ==========================================================================
+   AGREGO Design System — Design Tokens
+   Single source of truth for all visual variables.
+   ========================================================================== */
+
+:root {
+  /* ----------------------------------------
+     BRAND COLORS
+  ---------------------------------------- */
+  --agrego-forest: #0B2F15;
+  --agrego-growth: #4D9822;
+  --agrego-technology: #1262C1;
+  --agrego-cooperative: #F27C03;
+
+  /* ----------------------------------------
+     NEUTRAL SCALE
+  ---------------------------------------- */
+  --neutral-900: #111827;
+  --neutral-800: #1F2937;
+  --neutral-700: #374151;
+  --neutral-600: #4B5563;
+  --neutral-500: #6B7280;
+  --neutral-400: #9CA3AF;
+  --neutral-300: #D1D5DB;
+  --neutral-200: #E5E7EB;
+  --neutral-100: #F3F4F6;
+  --neutral-50: #F8FAFC;
+  --neutral-0: #FFFFFF;
+
+  /* ----------------------------------------
+     SEMANTIC COLORS
+  ---------------------------------------- */
+  --semantic-success: #22C55E;
+  --semantic-warning: #F59E0B;
+  --semantic-error: #EF4444;
+  --semantic-info: #3B82F6;
+
+  /* Tinted backgrounds for badges / highlights */
+  --success-bg: #DCFCE7;
+  --success-text: #15803D;
+  --warning-bg: #FEF3C7;
+  --warning-text: #B45309;
+  --error-bg: #FEE2E2;
+  --error-text: #B91C1C;
+  --info-bg: #DBEAFE;
+  --info-text: #1D4ED8;
+
+  /* Growth Green tints */
+  --growth-bg: #F0F8E8;
+  --growth-text: #3A7319;
+
+  /* Technology Blue tints */
+  --technology-bg: #EFF6FF;
+  --technology-text: #1262C1;
+
+  /* Cooperative Orange tints */
+  --cooperative-bg: #FFF7ED;
+  --cooperative-text: #C2570A;
+
+  /* ----------------------------------------
+     BORDER RADIUS SYSTEM
+  ---------------------------------------- */
+  --radius-button: 12px;
+  --radius-input: 14px;
+  --radius-card: 20px;
+  --radius-dialog: 24px;
+  --radius-bottom-sheet: 28px;
+  --radius-pill: 999px;
+
+  /* Nested inner radius */
+  --radius-inner: 12px;
+  --radius-badge: 999px;
+
+  /* ----------------------------------------
+     SHADOW SYSTEM (3 levels)
+  ---------------------------------------- */
+  --shadow-soft: 0 4px 16px rgba(0, 0, 0, 0.06);
+  --shadow-medium: 0 8px 24px rgba(0, 0, 0, 0.08);
+  --shadow-hover: 0 16px 40px rgba(0, 0, 0, 0.10);
+
+  /* ----------------------------------------
+     SPACING SCALE
+  ---------------------------------------- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+  --space-32: 128px;
+
+  /* ----------------------------------------
+     LAYOUT
+  ---------------------------------------- */
+  --content-max-width: 1280px;
+  --sidebar-width-expanded: 256px;
+  --sidebar-width-collapsed: 72px;
+  --header-height: 64px;
+  --mobile-header-height: 56px;
+  --mobile-bottom-nav-height: 64px;
+
+  /* ----------------------------------------
+     GRADIENTS
+  ---------------------------------------- */
+  --gradient-primary: linear-gradient(135deg, #4D9822 0%, #1262C1 100%);
+  --gradient-hero: linear-gradient(135deg, #0B2F15 0%, #1262C1 100%);
+  --gradient-accent: linear-gradient(135deg, #4D9822 0%, #F27C03 100%);
+
+  /* ----------------------------------------
+     SIDEBAR TOKENS (dark surface)
+  ---------------------------------------- */
+  --sidebar-bg: var(--agrego-forest);
+  --sidebar-surface: #122918;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-text: rgba(255, 255, 255, 0.70);
+  --sidebar-text-strong: rgba(255, 255, 255, 0.95);
+  --sidebar-label: rgba(255, 255, 255, 0.35);
+  --sidebar-active-bg: rgba(77, 152, 34, 0.25);
+  --sidebar-active-text: #7EC84A;
+  --sidebar-hover-bg: rgba(255, 255, 255, 0.07);
+  --sidebar-icon-active: #7EC84A;
+
+  /* ----------------------------------------
+     SEMANTIC APPLICATION ALIASES
+     (maps tokens to functional usage)
+  ---------------------------------------- */
+  --color-primary: var(--agrego-growth);
+  --color-primary-hover: #3D7B1C;
+  --color-primary-focus-ring: rgba(77, 152, 34, 0.2);
+
+  --color-link: var(--agrego-technology);
+  --color-attention: var(--agrego-cooperative);
+  --color-forest: var(--agrego-forest);
+
+  --color-text: var(--neutral-700);
+  --color-text-strong: var(--neutral-900);
+  --color-text-muted: var(--neutral-500);
+  --color-text-subtle: var(--neutral-400);
+
+  --color-bg: var(--neutral-50);
+  --color-surface: var(--neutral-0);
+  --color-border: var(--neutral-200);
+  --color-border-subtle: var(--neutral-100);
+
+  --color-destructive: var(--semantic-error);
+  --color-destructive-hover: #DC2626;
+  --color-destructive-bg: var(--error-bg);
+
+  /* ----------------------------------------
+     TYPOGRAPHY
+  ---------------------------------------- */
+  --font-family: 'Inter', system-ui, -apple-system, sans-serif;
+
+  --font-size-xs: 12px;
+  --font-size-sm: 14px;
+  --font-size-base: 16px;
+  --font-size-lg: 18px;
+  --font-size-xl: 20px;
+  --font-size-2xl: 24px;
+  --font-size-3xl: 30px;
+  --font-size-4xl: 36px;
+  --font-size-kpi: 32px;
+
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  --line-height-tight: 1.2;
+  --line-height-snug: 1.4;
+  --line-height-normal: 1.6;
+  --line-height-relaxed: 1.75;
+}
