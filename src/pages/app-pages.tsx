@@ -11,6 +11,7 @@ import StatusBadge from '../components/data-display/status-badge'
 import NumberUnitInput from '../components/forms/number-unit-input'
 import PageHeader from '../components/layout/page-header'
 import type { Page } from '../config/navigation'
+import { mapBackendRole, type AuthUser } from '../lib/auth'
 import { initialDepositRecords } from './page-data'
 import {
   LayoutDashboard,
@@ -132,11 +133,7 @@ type ProfitShareRecord = {
   calculatedAt: string
 }
 
-type MockUser = {
-  name: string
-  email: string
-  role: 'Admin' | 'Koperasi' | 'Buyer'
-}
+type MockUser = AuthUser
 
 /*
 type MemberRecord = {
@@ -2515,7 +2512,6 @@ function ProfitSharesPage() {
 function LoginPage({ onLogin, goToPage }: { onLogin: (user: MockUser) => void; goToPage: (page: Page) => void }) {
   const [email, setEmail] = useState('operator@koperasi.id')
   const [password, setPassword] = useState('password')
-  const [role, setRole] = useState<MockUser['role']>('Koperasi')
   const [error, setError] = useState('')
 
   return (
@@ -2536,9 +2532,9 @@ function LoginPage({ onLogin, goToPage }: { onLogin: (user: MockUser) => void; g
               return
             }
             onLogin({
-              name: role === 'Buyer' ? 'Buyer Nusantara' : 'Operator Koperasi',
+              name: 'Anggota',
               email,
-              role,
+              role: 'Anggota',
             })
             setError('')
           }}
@@ -2559,17 +2555,6 @@ function LoginPage({ onLogin, goToPage }: { onLogin: (user: MockUser) => void; g
               onChange={(event) => setPassword(event.target.value)}
             />
           </label>
-          <label>
-            <span>Role</span>
-            <select
-              value={role}
-              onChange={(event) => setRole(event.target.value as MockUser['role'])}
-            >
-              <option>Admin</option>
-              <option>Koperasi</option>
-              <option>Buyer</option>
-            </select>
-          </label>
           {error ? <small className="field-error">{error}</small> : null}
           <button className="primary-action" type="submit">
             Masuk
@@ -2589,7 +2574,6 @@ function LoginPage({ onLogin, goToPage }: { onLogin: (user: MockUser) => void; g
 function RegisterPage({ goToPage }: { goToPage: (page: Page) => void }) {
   const [name, setName] = useState('Admin Koperasi')
   const [email, setEmail] = useState('admin@koperasi.id')
-  const [role, setRole] = useState<MockUser['role']>('Admin')
   const [password, setPassword] = useState('password')
   const [confirmPassword, setConfirmPassword] = useState('password')
   const [message, setMessage] = useState('')
@@ -2629,17 +2613,6 @@ function RegisterPage({ goToPage }: { goToPage: (page: Page) => void }) {
           <label>
             <span>Email</span>
             <input value={email} onChange={(event) => setEmail(event.target.value)} />
-          </label>
-          <label>
-            <span>Role</span>
-            <select
-              value={role}
-              onChange={(event) => setRole(event.target.value as MockUser['role'])}
-            >
-              <option>Admin</option>
-              <option>Koperasi</option>
-              <option>Buyer</option>
-            </select>
           </label>
           <div className="form-grid">
             <label>

@@ -5,7 +5,12 @@ export default defineSchema({
   users: defineTable({
     name: v.string(),
     email: v.string(),
-    role: v.union(v.literal("admin"), v.literal("cooperative"), v.literal("buyer")),
+    role: v.union(
+      v.literal("admin"),
+      v.literal("cooperative"),
+      v.literal("buyer"),
+      v.literal("member"),
+    ),
     passwordHash: v.string(),
     joinedAt: v.number(),
     updatedAt: v.optional(v.number()),

@@ -1,6 +1,6 @@
 import type { Page } from './navigation'
 
-export type Role = 'Admin' | 'Koperasi' | 'Buyer'
+export type Role = 'Admin' | 'Koperasi' | 'Buyer' | 'Anggota'
 
 // Allowed page IDs for each role
 export const rolePermissions: Record<Role, (Page | 'logout')[]> = {
@@ -41,6 +41,15 @@ export const rolePermissions: Record<Role, (Page | 'logout')[]> = {
     'contracts',
     'contractDetail',
     'allocationStatus',
+    'profile',
+    'logout'
+  ],
+  Anggota: [
+    'dashboard',
+    'newDeposit',
+    'deposits',
+    'depositReport',
+    'profitShares',
     'profile',
     'logout'
   ]

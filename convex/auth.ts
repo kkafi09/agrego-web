@@ -2,7 +2,14 @@ import { v } from "convex/values";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
 import { mutation } from "./_generated/server";
 
-type UserRole = "admin" | "cooperative" | "buyer";
+type UserRole = "admin" | "cooperative" | "buyer" | "member";
+
+const userRoleValidator = v.union(
+  v.literal("admin"),
+  v.literal("cooperative"),
+  v.literal("buyer"),
+  v.literal("member"),
+);
 
 async function hashPassword(password: string) {
   const bytes = new TextEncoder().encode(password);
@@ -39,7 +46,6 @@ export const registerUser = mutation({
     name: v.string(),
     email: v.string(),
     password: v.string(),
-    role: v.union(v.literal("admin"), v.literal("cooperative"), v.literal("buyer")),
   },
   handler: async (ctx, args) => {
     if (args.password.length < 6) {
@@ -58,7 +64,7 @@ export const registerUser = mutation({
     return ctx.db.insert("users", {
       name: args.name,
       email: args.email,
-      role: args.role,
+      role: "member",
       passwordHash: await hashPassword(args.password),
       joinedAt: Date.now(),
     });
