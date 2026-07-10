@@ -1,35 +1,27 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 
-type SizeGrade = "A" | "B" | "C";
+type SizeGrade = "A" | "B" | "C" | "D";
 type QualityDecision = "priority" | "passed" | "held";
 
-export function calculateQualityScore({
-  moisturePercent,
-  sizeGrade,
-  defectPercent,
-}: {
-  moisturePercent: number;
-  sizeGrade: SizeGrade;
-  defectPercent: number;
-}) {
-  const moisturePenalty =
-    moisturePercent < 10
-      ? (10 - moisturePercent) * 2
-      : Math.max(0, moisturePercent - 13) * 3;
-  const gradePenalty = sizeGrade === "A" ? 0 : sizeGrade === "B" ? 6 : 14;
-  const defectPenalty = defectPercent * 4;
-  const rawScore = 100 - moisturePenalty - gradePenalty - defectPenalty;
-
-  return Math.max(0, Math.min(100, Math.round(rawScore)));
+function legacyQualityGrade(score: number | undefined): SizeGrade {
+  if (typeof score !== "number") return "D";
+  if (score >= 90) return "A";
+  if (score >= 82) return "B";
+  if (score >= 70) return "C";
+  return "D";
 }
 
-export function getQualityDecision(score: number): QualityDecision {
-  if (score >= 90) {
+export function calculateQualityGrade(qualityGrade: SizeGrade) {
+  return qualityGrade;
+}
+
+export function getQualityDecision(grade: SizeGrade): QualityDecision {
+  if (grade === "A") {
     return "priority";
   }
 
-  if (score >= 82) {
+  if (grade === "B" || grade === "C") {
     return "passed";
   }
 
@@ -38,16 +30,14 @@ export function getQualityDecision(score: number): QualityDecision {
 
 export const previewQualityScore = query({
   args: {
-    moisturePercent: v.number(),
-    sizeGrade: v.union(v.literal("A"), v.literal("B"), v.literal("C")),
-    defectPercent: v.number(),
+    qualityGrade: v.union(v.literal("A"), v.literal("B"), v.literal("C"), v.literal("D")),
   },
   handler: async (_ctx, args) => {
-    const qualityScore = calculateQualityScore(args);
+    const qualityGrade = calculateQualityGrade(args.qualityGrade);
 
     return {
-      qualityScore,
-      decision: getQualityDecision(qualityScore),
+      qualityGrade,
+      decision: getQualityDecision(qualityGrade),
     };
   },
 });
@@ -55,8 +45,7 @@ export const previewQualityScore = query({
 export const saveQualityCheck = mutation({
   args: {
     depositId: v.id("deposits"),
-    moisturePercent: v.number(),
-    sizeGrade: v.union(v.literal("A"), v.literal("B"), v.literal("C")),
+    qualityGrade: v.union(v.literal("A"), v.literal("B"), v.literal("C"), v.literal("D")),
     defectPercent: v.number(),
     inspectorName: v.string(),
     notes: v.optional(v.string()),
@@ -67,26 +56,23 @@ export const saveQualityCheck = mutation({
       throw new Error("Setoran tidak ditemukan.");
     }
 
-    if (args.moisturePercent < 0 || args.defectPercent < 0) {
-      throw new Error("Parameter QC tidak boleh bernilai negatif.");
+    if (args.defectPercent < 0) {
+      throw new Error("Kerusakan tidak boleh bernilai negatif.");
     }
 
-    const qualityScore = calculateQualityScore(args);
-    const decision = getQualityDecision(qualityScore);
+    const qualityGrade = calculateQualityGrade(args.qualityGrade);
+    const decision = getQualityDecision(qualityGrade);
     const checkedAt = Date.now();
     const qcData = {
-      moisturePercent: args.moisturePercent,
-      sizeGrade: args.sizeGrade,
+      qualityGrade: args.qualityGrade,
       defectPercent: args.defectPercent,
       notes: args.notes,
     };
     const qualityCheckId = await ctx.db.insert("qualityChecks", {
       koperasiId: deposit.koperasiId,
       depositId: args.depositId,
-      moisturePercent: args.moisturePercent,
-      sizeGrade: args.sizeGrade,
+      qualityGrade: args.qualityGrade,
       defectPercent: args.defectPercent,
-      qualityScore,
       decision,
       inspectorName: args.inspectorName,
       notes: args.notes,
@@ -94,7 +80,7 @@ export const saveQualityCheck = mutation({
     });
 
     await ctx.db.patch(args.depositId, {
-      qualityScore,
+      qualityGrade,
       qualityDecision: decision,
       qualityCheckedAt: checkedAt,
       qcData,
@@ -103,7 +89,6 @@ export const saveQualityCheck = mutation({
 
     return {
       qualityCheckId,
-      qualityScore,
       decision,
     };
   },
@@ -141,10 +126,8 @@ export const listQualityChecksByDeposit = query({
         .sort((a, b) => b.checkedAt - a.checkedAt)
         .map((check) => ({
           id: check._id,
-          moisturePercent: check.moisturePercent,
-          sizeGrade: check.sizeGrade,
+          qualityGrade: check.qualityGrade ?? check.sizeGrade ?? legacyQualityGrade(check.qualityScore),
           defectPercent: check.defectPercent,
-          qualityScore: check.qualityScore,
           decision: check.decision,
           inspectorName: check.inspectorName,
           notes: check.notes ?? null,
@@ -188,6 +171,8 @@ export const listDepositsWithLatestQualityScore = query({
             status: deposit.status,
             latestQualityScore:
               latestCheck?.qualityScore ?? deposit.qualityScore ?? null,
+            latestQualityGrade:
+              latestCheck?.qualityGrade ?? latestCheck?.sizeGrade ?? deposit.qualityGrade ?? legacyQualityGrade(latestCheck?.qualityScore ?? deposit.qualityScore),
             latestDecision: latestCheck?.decision ?? null,
             latestCheckedAt: latestCheck?.checkedAt ?? null,
           };
@@ -224,10 +209,8 @@ export const listQualityChecks = query({
             depositNumber: deposit?.depositNumber ?? null,
             memberName: member?.name ?? "Anggota tidak ditemukan",
             commodityName: commodity?.name ?? "Komoditas tidak ditemukan",
-            moisturePercent: check.moisturePercent,
-            sizeGrade: check.sizeGrade,
+            qualityGrade: check.qualityGrade ?? check.sizeGrade ?? legacyQualityGrade(check.qualityScore),
             defectPercent: check.defectPercent,
-            qualityScore: check.qualityScore,
             decision: check.decision,
             inspectorName: check.inspectorName,
             notes: check.notes ?? null,
@@ -262,10 +245,8 @@ export const getQualityCheckById = query({
       depositNumber: deposit?.depositNumber ?? null,
       memberName: member?.name ?? "Anggota tidak ditemukan",
       commodityName: commodity?.name ?? "Komoditas tidak ditemukan",
-      moisturePercent: check.moisturePercent,
-      sizeGrade: check.sizeGrade,
+      qualityGrade: check.qualityGrade ?? check.sizeGrade ?? legacyQualityGrade(check.qualityScore),
       defectPercent: check.defectPercent,
-      qualityScore: check.qualityScore,
       decision: check.decision,
       inspectorName: check.inspectorName,
       notes: check.notes ?? null,

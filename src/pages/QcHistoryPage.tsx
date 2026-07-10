@@ -1,20 +1,21 @@
 import { useQuery } from 'convex/react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../../convex/_generated/api'
+import { getAuthToken } from '../lib/auth'
 import { getPagePath } from '../config/routes'
 import { getStatusStyle } from '../config/status-config'
 import { mapQualityDecision } from './shared'
 
 export function QcHistoryPage() {
-  const defaultKoperasi = useQuery(api.koperasi.getDefaultKoperasi)
+  const currentKoperasi = useQuery(api.koperasi.getCurrentKoperasi, { token: getAuthToken() })
   const navigate = useNavigate()
-  const koperasiId = defaultKoperasi?._id
+  const koperasiId = currentKoperasi?._id
   const qualityChecks = useQuery(api.qualityChecks.listQualityChecks, koperasiId ? { koperasiId } : 'skip')
   const records = qualityChecks ?? []
-  const averageScore =
-    records.length > 0
-      ? Math.round(records.reduce((total, record) => total + record.qualityScore, 0) / records.length)
-      : 0
+  const bestGrade = records.reduce((best, record) => {
+    const order = ['A', 'B', 'C', 'D']
+    return order.indexOf(record.qualityGrade) < order.indexOf(best) ? record.qualityGrade : best
+  }, records[0]?.qualityGrade ?? '-')
   const passedCount = records.filter((record) => record.decision !== 'held').length
 
   return (
@@ -25,8 +26,8 @@ export function QcHistoryPage() {
           <h1>Riwayat pemeriksaan kualitas</h1>
         </div>
         <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-right [&_span]:block [&_span]:text-xs [&_span]:font-bold [&_span]:text-emerald-700 [&_strong]:mt-1 [&_strong]:block [&_strong]:text-lg [&_strong]:font-black [&_strong]:text-slate-950" aria-label="Ringkasan quality check">
-          <span>Rata-rata Quality Score</span>
-          <strong>{averageScore}</strong>
+          <span>Grade Terbaik</span>
+          <strong>{bestGrade}</strong>
         </div>
       </header>
 
@@ -34,7 +35,7 @@ export function QcHistoryPage() {
         <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm [&>span]:text-sm [&>span]:font-bold [&>span]:text-slate-500 [&>strong]:mt-3 [&>strong]:block [&>strong]:text-2xl [&>strong]:font-black [&>strong]:text-slate-950 [&>small]:mt-2 [&>small]:block [&>small]:text-sm [&>small]:font-semibold [&>small]:text-slate-500"><span>Total QC</span><strong>{records.length}</strong><small>Pemeriksaan tercatat</small></article>
         <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm [&>span]:text-sm [&>span]:font-bold [&>span]:text-slate-500 [&>strong]:mt-3 [&>strong]:block [&>strong]:text-2xl [&>strong]:font-black [&>strong]:text-slate-950 [&>small]:mt-2 [&>small]:block [&>small]:text-sm [&>small]:font-semibold [&>small]:text-slate-500"><span>Lolos Standar</span><strong>{passedCount}</strong><small>Siap dipertimbangkan alokasi</small></article>
         <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm [&>span]:text-sm [&>span]:font-bold [&>span]:text-slate-500 [&>strong]:mt-3 [&>strong]:block [&>strong]:text-2xl [&>strong]:font-black [&>strong]:text-slate-950 [&>small]:mt-2 [&>small]:block [&>small]:text-sm [&>small]:font-semibold [&>small]:text-slate-500"><span>Perlu Ditahan</span><strong>{records.length - passedCount}</strong><small>Butuh tindak lanjut koperasi</small></article>
-        <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm [&>span]:text-sm [&>span]:font-bold [&>span]:text-slate-500 [&>strong]:mt-3 [&>strong]:block [&>strong]:text-2xl [&>strong]:font-black [&>strong]:text-slate-950 [&>small]:mt-2 [&>small]:block [&>small]:text-sm [&>small]:font-semibold [&>small]:text-slate-500"><span>Skor Tertinggi</span><strong>{records.length > 0 ? Math.max(...records.map((record) => record.qualityScore)) : 0}</strong><small>Prioritas supply pool</small></article>
+        <article className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm [&>span]:text-sm [&>span]:font-bold [&>span]:text-slate-500 [&>strong]:mt-3 [&>strong]:block [&>strong]:text-2xl [&>strong]:font-black [&>strong]:text-slate-950 [&>small]:mt-2 [&>small]:block [&>small]:text-sm [&>small]:font-semibold [&>small]:text-slate-500"><span>Grade Terendah</span><strong>{records.length > 0 ? records.reduce((worst, record) => ['A', 'B', 'C', 'D'].indexOf(record.qualityGrade) > ['A', 'B', 'C', 'D'].indexOf(worst) ? record.qualityGrade : worst, records[0].qualityGrade) : '-'}</strong><small>Perlu perhatian QC</small></article>
       </section>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -50,21 +51,19 @@ export function QcHistoryPage() {
             <table className="min-w-[900px] border-collapse text-left text-sm">
               <thead className="bg-slate-50 text-xs font-black uppercase tracking-wide text-slate-500">
                 <tr>
-                  <th className="px-4 py-3">ID QC</th>
                   <th className="px-4 py-3">Setoran</th>
                   <th className="px-4 py-3">Komoditas</th>
-                  <th className="px-4 py-3">Kadar Air</th>
-                  <th className="px-4 py-3">Grade</th>
+                  <th className="px-4 py-3">Grade QS</th>
                   <th className="px-4 py-3">Kerusakan</th>
-                  <th className="px-4 py-3">Skor</th>
+                  <th className="px-4 py-3">Grade QS</th>
                   <th className="px-4 py-3">Keputusan</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {qualityChecks === undefined && koperasiId ? (
-                  <tr><td colSpan={8} className="px-4 py-10 text-center text-sm font-semibold text-slate-500">Memuat riwayat QC...</td></tr>
+                  <tr><td colSpan={5} className="px-4 py-10 text-center text-sm font-semibold text-slate-500">Memuat riwayat QC...</td></tr>
                 ) : records.length === 0 ? (
-                  <tr><td colSpan={8} className="px-4 py-10 text-center text-sm font-semibold text-slate-500">Belum ada pemeriksaan kualitas.</td></tr>
+                  <tr><td colSpan={5} className="px-4 py-10 text-center text-sm font-semibold text-slate-500">Belum ada pemeriksaan kualitas.</td></tr>
                 ) : records.map((record) => {
                   const decision = mapQualityDecision(record.decision)
                   return (
@@ -76,13 +75,10 @@ export function QcHistoryPage() {
                         navigate(getPagePath('qcResultDetail'))
                       }}
                     >
-                      <td className="px-4 py-3 font-mono text-xs font-black text-emerald-700">{record.id}</td>
                       <td className="px-4 py-3"><strong className="block text-slate-950">{record.depositNumber ?? '-'}</strong><small className="font-semibold text-slate-500">{record.memberName} / {record.inspectorName}</small></td>
                       <td className="px-4 py-3 font-semibold text-slate-700">{record.commodityName}</td>
-                      <td className="px-4 py-3 font-semibold text-slate-700">{record.moisturePercent}%</td>
-                      <td className="px-4 py-3 font-semibold text-slate-700">{record.sizeGrade}</td>
+                      <td className="px-4 py-3 font-black text-slate-950">{record.qualityGrade}</td>
                       <td className="px-4 py-3 font-semibold text-slate-700">{record.defectPercent}%</td>
-                      <td className="px-4 py-3 font-black text-slate-950">{record.qualityScore}</td>
                       <td className="px-4 py-3"><span className={`inline-flex w-fit items-center rounded-full border px-2.5 py-1 text-xs font-black ${getStatusStyle(decision).className}`}>{getStatusStyle(decision).label}</span></td>
                     </tr>
                   )

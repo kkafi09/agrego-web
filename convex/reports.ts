@@ -20,7 +20,7 @@ export const calculateContractProfitShares = mutation({
     );
     const weightedTotal = activeAllocations.reduce(
       (total, allocation) =>
-        total + allocation.allocatedWeightKg * allocation.qualityScoreSnapshot,
+        total + allocation.allocatedWeightKg * (allocation.qualityScoreSnapshot ?? 0),
       0,
     );
 
@@ -43,14 +43,14 @@ export const calculateContractProfitShares = mutation({
       }
 
       const weight =
-        allocation.allocatedWeightKg * allocation.qualityScoreSnapshot;
+        allocation.allocatedWeightKg * (allocation.qualityScoreSnapshot ?? 0);
       const amountEarned = Math.round((weight / weightedTotal) * contractValue);
       const shareId = await ctx.db.insert("profitShares", {
         contractId: args.contractId,
         poolId: allocation._id,
         memberId: deposit.memberId,
         contributedWeightKg: allocation.allocatedWeightKg,
-        qualityScore: allocation.qualityScoreSnapshot,
+        qualityScore: allocation.qualityScoreSnapshot ?? 0,
         amountEarned,
         calculatedAt,
       });

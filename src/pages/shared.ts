@@ -3,7 +3,7 @@ import type { AuthUser } from '../lib/auth'
 export type DepositStatus = 'recorded' | 'quality_checked' | 'allocated' | 'rejected'
 export type ContractStatus = 'draft' | 'active' | 'completed' | 'cancelled'
 export type QualityDecision = 'priority' | 'passed' | 'held'
-export type SizeGrade = 'A' | 'B' | 'C'
+export type SizeGrade = 'A' | 'B' | 'C' | 'D'
 
 export type DepositFormState = {
   memberId: string
@@ -11,7 +11,6 @@ export type DepositFormState = {
   weightKg: string
   submittedAt: string
   collector: string
-  origin: string
   notes: string
 }
 
@@ -19,7 +18,6 @@ export type DepositFormErrors = Partial<Record<keyof DepositFormState, string>>
 
 export type QcFormState = {
   depositId: string
-  moisturePercent: string
   sizeGrade: SizeGrade
   defectPercent: string
   inspector: string
@@ -27,7 +25,6 @@ export type QcFormState = {
 }
 
 export type ContractFormState = {
-  buyerId: string
   commodityId: string
   targetKg: string
   minimumQuality: string
@@ -40,7 +37,7 @@ export type ContractFormState = {
 export type ContractFormErrors = Partial<Record<keyof ContractFormState, string>>
 export type MockUser = AuthUser
 
-export const gradeOptions: SizeGrade[] = ['A', 'B', 'C']
+export const gradeOptions: SizeGrade[] = ['A', 'B', 'C', 'D']
 
 export function formatKg(value: number) {
   return `${value.toLocaleString('id-ID')} kg`
@@ -116,35 +113,32 @@ export function validateDepositForm(form: DepositFormState) {
   }
   if (!form.submittedAt) errors.submittedAt = 'Tanggal setor wajib diisi.'
   if (!form.collector.trim()) errors.collector = 'Nama pencatat wajib diisi.'
-  if (!form.origin.trim()) errors.origin = 'Asal dusun wajib diisi.'
   return errors
 }
 
-export function calculateQualityScore(form: QcFormState) {
-  const moisture = Number(form.moisturePercent) || 0
-  const defect = Number(form.defectPercent) || 0
-  const moisturePenalty =
-    moisture < 10 ? (10 - moisture) * 2 : Math.max(0, moisture - 13) * 3
-  const gradePenalty = form.sizeGrade === 'A' ? 0 : form.sizeGrade === 'B' ? 6 : 14
-  const defectPenalty = defect * 4
-  const finalScore = Math.max(0, Math.min(100, Math.round(100 - moisturePenalty - gradePenalty - defectPenalty)))
-  return finalScore
+export function qualityGradeRank(grade: SizeGrade | null | undefined) {
+  return grade === 'A' ? 0 : grade === 'B' ? 1 : grade === 'C' ? 2 : 3
+}
+
+export function mapLegacyQualityScore(score: number | null | undefined): SizeGrade {
+  if (typeof score !== 'number') return 'D'
+  if (score >= 90) return 'A'
+  if (score >= 82) return 'B'
+  if (score >= 70) return 'C'
+  return 'D'
 }
 
 export function validateContractForm(form: ContractFormState) {
   const errors: ContractFormErrors = {}
-  if (!form.buyerId) errors.buyerId = 'Buyer wajib dipilih.'
   if (!form.commodityId) errors.commodityId = 'Komoditas wajib dipilih.'
   if (!form.targetKg || Number.isNaN(Number(form.targetKg)) || Number(form.targetKg) <= 0) {
     errors.targetKg = 'Target volume harus berupa angka positif.'
   }
   if (
     !form.minimumQuality ||
-    Number.isNaN(Number(form.minimumQuality)) ||
-    Number(form.minimumQuality) < 0 ||
-    Number(form.minimumQuality) > 100
+    !['A', 'B', 'C', 'D'].includes(form.minimumQuality)
   ) {
-    errors.minimumQuality = 'Standar kualitas minimal bernilai 0 - 100.'
+    errors.minimumQuality = 'Minimum grade wajib dipilih.'
   }
   if (!form.pricePerKg || Number.isNaN(Number(form.pricePerKg)) || Number(form.pricePerKg) <= 0) {
     errors.pricePerKg = 'Harga per kilogram harus berupa angka positif.'

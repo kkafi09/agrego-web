@@ -23,12 +23,11 @@ export function QcResultDetailPage() {
   }
 
   const decision = mapQualityDecision(record.decision)
-  const recommendation =
-    record.qualityScore >= 90
-      ? 'Masukkan sebagai prioritas supply pool untuk kontrak aktif.'
-      : record.qualityScore >= 82
-        ? 'Layak dialokasikan setelah kebutuhan prioritas terpenuhi.'
-        : 'Tahan dari pool dan lakukan sortasi ulang.'
+  const recommendation = record.qualityGrade === 'A'
+    ? 'Masukkan sebagai prioritas supply pool untuk kontrak aktif.'
+    : record.qualityGrade === 'D'
+      ? 'Tahan dari pool dan lakukan sortasi ulang.'
+      : 'Layak dialokasikan setelah kebutuhan prioritas terpenuhi.'
 
   return (
     <>
@@ -37,9 +36,9 @@ export function QcResultDetailPage() {
           <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-700">AGREGO / Quality Check</p>
           <h1>Detail hasil pemeriksaan</h1>
         </div>
-        <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-right [&_span]:block [&_span]:text-xs [&_span]:font-bold [&_span]:text-emerald-700 [&_strong]:mt-1 [&_strong]:block [&_strong]:text-lg [&_strong]:font-black [&_strong]:text-slate-950" aria-label="Skor hasil QC">
-          <span>Quality Score</span>
-          <strong>{record.qualityScore}</strong>
+        <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-right [&_span]:block [&_span]:text-xs [&_span]:font-bold [&_span]:text-emerald-700 [&_strong]:mt-1 [&_strong]:block [&_strong]:text-lg [&_strong]:font-black [&_strong]:text-slate-950" aria-label="Grade hasil QC">
+          <span>Grade QS</span>
+          <strong>{record.qualityGrade}</strong>
         </div>
       </header>
 
@@ -50,8 +49,8 @@ export function QcResultDetailPage() {
             <h2>{decision}</h2>
             <p>{recommendation}</p>
           </div>
-          <div className="score-ring" aria-label={`Quality score ${record.qualityScore}`}>
-            {record.qualityScore}
+          <div className="score-ring" aria-label={`Grade QS ${record.qualityGrade}`}>
+            {record.qualityGrade}
           </div>
         </article>
 
@@ -77,8 +76,7 @@ export function QcResultDetailPage() {
             <span>Audit trail QC</span>
           </div>
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            <div><dt>Kadar Air</dt><strong>{record.moisturePercent}%</strong></div>
-            <div><dt>Grade Ukuran</dt><strong>{record.sizeGrade}</strong></div>
+            <div><dt>Grade QS</dt><strong>{record.qualityGrade}</strong></div>
             <div><dt>Kerusakan</dt><strong>{record.defectPercent}%</strong></div>
             <div><dt>Keputusan</dt><strong>{decision}</strong></div>
           </div>

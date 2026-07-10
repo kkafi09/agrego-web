@@ -12,6 +12,10 @@ export type AuthUser = {
 export const authTokenStorageKey = 'agrego_auth_token'
 export const authUserStorageKey = 'agrego_auth_user'
 
+export function getAuthToken() {
+  return localStorage.getItem(authTokenStorageKey) ?? ''
+}
+
 export function mapBackendRole(role: BackendRole): Role {
   if (role === 'admin') return 'Admin'
   if (role === 'cooperative') return 'Koperasi'

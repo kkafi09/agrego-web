@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery } from 'convex/react'
 import { api } from '../../convex/_generated/api'
+import { getAuthToken } from '../lib/auth'
 import { Button } from '../components/ui/button'
 import {
   Select,
@@ -25,12 +26,12 @@ type DepositRow = {
   weightKg: number
   submittedAt: number
   status: DepositStatus
-  qualityScore: number | null
+  qualityGrade: string | null
 }
 
 export function DepositReportPage() {
-  const defaultKoperasi = useQuery(api.koperasi.getDefaultKoperasi)
-  const koperasiId = defaultKoperasi?._id
+  const currentKoperasi = useQuery(api.koperasi.getCurrentKoperasi, { token: getAuthToken() })
+  const koperasiId = currentKoperasi?._id
   const records = useQuery(api.deposits.listDeposits, koperasiId ? { koperasiId } : 'skip') as DepositRow[] | undefined
   const deposits = records ?? []
   const commodities = useQuery(api.masterData.searchCommodities, { searchTerm: '' })
@@ -96,7 +97,7 @@ export function DepositReportPage() {
                   record.commodityName,
                   String(record.weightKg),
                   formatDate(record.submittedAt),
-                  String(record.qualityScore ?? ''),
+                  record.qualityGrade ? `Grade ${record.qualityGrade}` : '',
                   mapDepositStatus(record.status),
                 ]),
               ])
@@ -126,28 +127,26 @@ export function DepositReportPage() {
             <table className="min-w-full border-collapse text-left text-sm">
               <thead className="bg-slate-50 text-xs font-black uppercase tracking-wide text-slate-500">
                 <tr>
-                  <th className="px-4 py-3">ID</th>
                   <th className="px-4 py-3">Anggota</th>
                   <th className="px-4 py-3">Komoditas</th>
                   <th className="px-4 py-3">Berat</th>
                   <th className="px-4 py-3">Tanggal</th>
-                  <th className="px-4 py-3">Quality</th>
+                <th className="px-4 py-3">Grade QS</th>
                   <th className="px-4 py-3">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {records === undefined && koperasiId ? (
-                  <tr><td colSpan={7} className="px-4 py-10 text-center text-sm font-semibold text-slate-500">Memuat laporan setoran...</td></tr>
+                  <tr><td colSpan={6} className="px-4 py-10 text-center text-sm font-semibold text-slate-500">Memuat laporan setoran...</td></tr>
                 ) : filteredRecords.length === 0 ? (
-                  <tr><td colSpan={7} className="px-4 py-10 text-center text-sm font-semibold text-slate-500">Belum ada data setoran untuk laporan.</td></tr>
+                  <tr><td colSpan={6} className="px-4 py-10 text-center text-sm font-semibold text-slate-500">Belum ada data setoran untuk laporan.</td></tr>
                 ) : filteredRecords.map((record) => (
                   <tr className="transition hover:bg-emerald-50/50" key={record.id}>
-                    <td className="px-4 py-3 font-mono text-xs font-black text-emerald-700">{record.depositNumber}</td>
                     <td className="px-4 py-3 font-black text-slate-950">{record.memberName}</td>
                     <td className="px-4 py-3 font-semibold text-slate-700">{record.commodityName}</td>
                     <td className="px-4 py-3 font-semibold text-slate-700">{formatKg(record.weightKg)}</td>
                     <td className="px-4 py-3 font-semibold text-slate-700">{formatDate(record.submittedAt)}</td>
-                    <td className="px-4 py-3 font-semibold text-slate-700">{record.qualityScore ?? '-'}</td>
+                  <td className="px-4 py-3 font-semibold text-slate-700">{record.qualityGrade ?? '-'}</td>
                     <td className="px-4 py-3 font-semibold text-slate-700">{mapDepositStatus(record.status)}</td>
                   </tr>
                 ))}

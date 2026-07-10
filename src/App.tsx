@@ -5,6 +5,7 @@ import { api } from '../convex/_generated/api'
 import { Toaster } from 'react-hot-toast'
 import AppShell from './components/layout/shell'
 import type { Page } from './config/navigation'
+import { isPageAllowed } from './config/role-navigation'
 import { getPageFromPath, getPagePath } from './config/routes'
 import {
     authTokenStorageKey,
@@ -14,8 +15,6 @@ import {
 } from './lib/auth'
 import BrandLoader from './components/brand/brand-loader'
 import {
-    AllocationPage,
-    AllocationStatusPage,
     CommoditiesPage,
     ContractDetailPage,
     ContractsPage,
@@ -109,7 +108,9 @@ function App() {
     }
 
     function requireAuth(element: ReactElement) {
-        return user || authPages.includes(page) ? element : <Navigate replace to={getPagePath('login')} />
+        if (!user && !authPages.includes(page)) return <Navigate replace to={getPagePath('login')} />
+        if (user && !isPageAllowed(user.role, page)) return <Navigate replace to={getPagePath('dashboard')} />
+        return element
     }
 
     if (loading) {
@@ -149,7 +150,7 @@ function App() {
                 onLogout={handleLogout}
             >
                 <Routes>
-                    <Route path={getPagePath('dashboard')} element={requireAuth(<DashboardPage />)} />
+                    <Route path={getPagePath('dashboard')} element={requireAuth(<DashboardPage goToPage={goToPage} user={user} />)} />
                     <Route path={getPagePath('deposits')} element={requireAuth(<DepositHistoryPage />)} />
                     <Route
                         path={getPagePath('newDeposit')}
@@ -159,11 +160,9 @@ function App() {
                     <Route path={getPagePath('qcDepositDetail')} element={requireAuth(<QcDepositDetailPage />)} />
                     <Route path={getPagePath('qcForm')} element={requireAuth(<QcFormPage />)} />
                     <Route path={getPagePath('qcResultDetail')} element={requireAuth(<QcResultDetailPage />)} />
-                    <Route path={getPagePath('allocation')} element={requireAuth(<AllocationPage />)} />
-                    <Route path={getPagePath('allocationStatus')} element={requireAuth(<AllocationStatusPage />)} />
-                    <Route path={getPagePath('contracts')} element={requireAuth(<ContractsPage goToPage={goToPage} />)} />
+                    <Route path={getPagePath('contracts')} element={requireAuth(<ContractsPage goToPage={goToPage} user={user} />)} />
                     <Route path={getPagePath('newContract')} element={requireAuth(<NewContractPage goToPage={goToPage} user={user} />)} />
-                    <Route path={getPagePath('contractDetail')} element={requireAuth(<ContractDetailPage />)} />
+                    <Route path={getPagePath('contractDetail')} element={requireAuth(<ContractDetailPage user={user} />)} />
                     <Route path={getPagePath('depositReport')} element={requireAuth(<DepositReportPage />)} />
                     <Route path={getPagePath('profitShares')} element={requireAuth(<ProfitSharesPage />)} />
                     <Route

@@ -1,39 +1,36 @@
 import PageHeader from '../components/layout/page-header'
 import MetricCard from '../components/dashboard/kpi-tile'
 import CommodityStockList from '../components/dashboard/commodity-stock-list'
-import ActionRequiredList from '../components/dashboard/action-required-list'
 import ContractProgressCard from '../components/dashboard/contract-progress-card'
 import { useQuery } from 'convex/react'
 import { api } from '../../convex/_generated/api'
-import { Wheat, TrendingUp, LayoutDashboard, AlertTriangle } from 'lucide-react'
+import type { Page } from '../config/navigation'
+import type { AuthUser } from '../lib/auth'
+import { getAuthToken } from '../lib/auth'
+import { Wheat, TrendingUp, LayoutDashboard } from 'lucide-react'
 import {
   formatDate,
   formatKg,
 } from './shared'
 
-export function DashboardPage() {
+export function DashboardPage({ goToPage, user }: { goToPage: (page: Page) => void; user: AuthUser | null }) {
   const defaultKoperasi = useQuery(api.koperasi.getDefaultKoperasi)
-  const koperasiId = defaultKoperasi?._id
+  const currentKoperasi = useQuery(api.koperasi.getCurrentKoperasi, user?.role === 'Koperasi' ? { token: getAuthToken() } : 'skip')
+  const koperasiId = user?.role === 'Koperasi' ? currentKoperasi?._id : defaultKoperasi?._id
   const stockSummaries = useQuery(api.dashboard.stockSummaries, koperasiId ? { koperasiId } : 'skip')
-  const contracts = useQuery(api.dashboard.activeContractProgress, koperasiId ? { koperasiId } : 'skip')
-  const supplyPools = useQuery(api.dashboard.supplyPoolStatuses, koperasiId ? { koperasiId } : 'skip')
-  const notifications = useQuery(
-    api.notifications.listContractNotifications,
-    koperasiId ? { koperasiId, unreadOnly: true } : 'skip',
-  )
+  const contracts = useQuery(api.dashboard.activeContractProgress, user ? { token: getAuthToken() } : 'skip')
+  const supplyPools = useQuery(api.dashboard.supplyPoolStatuses, user?.role === 'Koperasi' ? { token: getAuthToken() } : 'skip')
+  const inventory = useQuery(api.dashboard.inventoryBalance, user?.role === 'Koperasi' ? { token: getAuthToken() } : 'skip')
   const stocks = stockSummaries ?? []
   const activeContracts = contracts ?? []
   const pools = supplyPools ?? []
-  const alerts = notifications ?? []
+  const inventoryRows = inventory ?? []
+  const totalInbound = inventoryRows.reduce((total, row) => total + row.inboundKg, 0)
+  const totalOutbound = inventoryRows.reduce((total, row) => total + row.outboundKg, 0)
+  const totalBalance = inventoryRows.reduce((total, row) => total + row.balanceKg, 0)
   const totalStock = stocks.reduce((total, item) => total + item.totalKg, 0)
   const totalReady = stocks.reduce((total, item) => total + item.readyKg, 0)
-  const qualityValues = stocks
-    .map((item) => item.averageQualityScore)
-    .filter((score): score is number => typeof score === 'number')
-  const averageQuality =
-    qualityValues.length > 0
-      ? Math.round(qualityValues.reduce((total, score) => total + score, 0) / qualityValues.length)
-      : 0
+  const qualityGrades = stocks.map((item) => item.qualityGrade).filter(Boolean)
   const activeFulfilled = activeContracts.reduce((total, contract) => total + contract.fulfilledKg, 0)
   const activeTargets = activeContracts.reduce((total, contract) => total + contract.targetVolumeKg, 0)
   const overallProgress = activeTargets > 0 ? Math.round((activeFulfilled / activeTargets) * 100) : 0
@@ -53,9 +50,9 @@ export function DashboardPage() {
           icon={Wheat}
         />
         <MetricCard
-          title="Quality Score Rata-rata"
-          value={averageQuality}
-          description="Di atas standar kontrak aktif"
+          title="Grade QS Terbaik"
+          value={qualityGrades[0] ?? '-'}
+          description="Berdasarkan stok yang tercatat"
           icon={TrendingUp}
         />
         <MetricCard
@@ -64,14 +61,24 @@ export function DashboardPage() {
           description={`${activeContracts.length} kontrak dalam pemenuhan`}
           icon={LayoutDashboard}
         />
-        <MetricCard
-          title="Notifikasi Kontrak"
-          value={alerts.length}
-          description="Perlu ditinjau pengurus"
-          icon={AlertTriangle}
-          isAlert={alerts.length > 0}
-        />
       </div>
+
+      {user?.role === 'Koperasi' ? (
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div><span className="text-xs font-black uppercase tracking-[0.16em] text-emerald-700">Neraca Barang</span><h2 className="mt-1 text-lg font-black text-slate-950">Barang masuk, keluar, dan saldo koperasi</h2></div>
+            <span className="text-sm font-bold text-slate-500">Supply pool dihitung sebagai barang keluar</span>
+          </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            <article className="rounded-xl border border-emerald-100 bg-emerald-50 p-4"><span className="text-xs font-bold text-emerald-700">Barang masuk</span><strong className="mt-1 block text-xl font-black text-slate-950">{formatKg(totalInbound)}</strong></article>
+            <article className="rounded-xl border border-orange-100 bg-orange-50 p-4"><span className="text-xs font-bold text-orange-700">Barang keluar</span><strong className="mt-1 block text-xl font-black text-slate-950">{formatKg(totalOutbound)}</strong></article>
+            <article className="rounded-xl border border-slate-200 bg-slate-50 p-4"><span className="text-xs font-bold text-slate-600">Saldo barang</span><strong className="mt-1 block text-xl font-black text-slate-950">{formatKg(totalBalance)}</strong></article>
+          </div>
+          <div className="mt-4 overflow-x-auto rounded-xl border border-slate-200">
+            <table className="min-w-full text-left text-sm"><thead className="bg-slate-50 text-xs font-black uppercase tracking-wide text-slate-500"><tr><th className="px-4 py-3">Komoditas</th><th className="px-4 py-3">Masuk</th><th className="px-4 py-3">Keluar</th><th className="px-4 py-3">Saldo</th><th className="px-4 py-3">Grade QS</th></tr></thead><tbody className="divide-y divide-slate-100">{inventoryRows.length === 0 ? <tr><td className="px-4 py-6 text-center font-semibold text-slate-500" colSpan={5}>Belum ada neraca barang.</td></tr> : inventoryRows.map((row) => <tr key={row.commodityId}><td className="px-4 py-3 font-black text-slate-950">{row.commodityName}</td><td className="px-4 py-3 font-semibold text-slate-700">{formatKg(row.inboundKg)}</td><td className="px-4 py-3 font-semibold text-slate-700">{formatKg(row.outboundKg)}</td><td className="px-4 py-3 font-black text-emerald-700">{formatKg(row.balanceKg)}</td><td className="px-4 py-3 font-semibold text-slate-700">{row.qualityGrade ?? '-'}</td></tr>)}</tbody></table>
+          </div>
+        </section>
+      ) : null}
 
       <div className="grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
         <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -88,22 +95,6 @@ export function DashboardPage() {
           </div>
         </section>
 
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div>
-            <span className="text-xs font-black uppercase tracking-[0.16em] text-orange-600">Notifikasi Kontrak</span>
-            <h2 className="mt-1 text-lg font-black text-slate-950">Peluang buyer masuk</h2>
-          </div>
-          <div className="mt-4">
-          <ActionRequiredList
-            notifications={alerts.map((item) => ({
-              id: item.id,
-              title: item.title,
-              body: item.message,
-              time: formatDate(item.createdAt),
-            }))}
-          />
-          </div>
-        </section>
       </div>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -128,9 +119,13 @@ export function DashboardPage() {
               commodity={contract.commodityName}
               fulfilledKg={contract.fulfilledKg}
               targetKg={contract.targetVolumeKg}
-              minimumQuality={contract.minimumQualityScore}
+              minimumQuality={contract.minimumQualityGrade}
               deadline={formatDate(contract.deadlineAt)}
               status="Aktif"
+              onClick={() => {
+                sessionStorage.setItem('agrego_selected_contract_id', contract.contractId)
+                goToPage('contractDetail')
+              }}
             />
           ))}
         </div>
@@ -145,7 +140,24 @@ export function DashboardPage() {
           {pools.length === 0 ? (
             <p className="text-sm font-bold text-emerald-700">Belum ada supply pool aktif.</p>
           ) : pools.map((pool) => (
-            <article className="grid gap-4 rounded-xl border border-slate-200 bg-slate-50/70 p-4" key={pool.contractId}>
+            <article
+              className="grid cursor-pointer gap-4 rounded-xl border border-slate-200 bg-slate-50/70 p-4 transition hover:border-emerald-300 hover:bg-emerald-50/40 hover:shadow-md"
+              key={pool.contractId}
+              onClick={() => {
+                sessionStorage.setItem('agrego_selected_contract_id', pool.contractId)
+                goToPage('contractDetail')
+              }}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault()
+                  sessionStorage.setItem('agrego_selected_contract_id', pool.contractId)
+                  goToPage('contractDetail')
+                }
+              }}
+              role="button"
+              tabIndex={0}
+              aria-label={`Buka supply pool kontrak ${pool.contractNumber}`}
+            >
               <div>
                 <span className="text-xs font-black text-slate-500">{pool.contractNumber}</span>
                 <strong className="mt-1 block text-sm font-black text-slate-950">{pool.commodityName}</strong>
@@ -165,7 +177,7 @@ export function DashboardPage() {
                 </div>
                 <div>
                   <dt className="text-xs font-semibold text-slate-500">Pool QS</dt>
-                  <dd className="mt-1 text-sm font-black text-emerald-700">{pool.poolQualityScore ?? '-'}</dd>
+                  <dd className="mt-1 text-sm font-black text-emerald-700">{pool.poolQualityGrade ?? '-'}</dd>
                 </div>
               </dl>
             </article>

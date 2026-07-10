@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useQuery } from 'convex/react'
 import { api } from '../../convex/_generated/api'
+import { getAuthToken } from '../lib/auth'
 import {
   Select,
   SelectContent,
@@ -11,8 +12,8 @@ import {
 import { formatDate, formatKg, mapDepositStatus } from './shared'
 
 export function QcDepositDetailPage() {
-  const defaultKoperasi = useQuery(api.koperasi.getDefaultKoperasi)
-  const koperasiId = defaultKoperasi?._id
+  const currentKoperasi = useQuery(api.koperasi.getCurrentKoperasi, { token: getAuthToken() })
+  const koperasiId = currentKoperasi?._id
   const deposits = useQuery(api.deposits.listDeposits, koperasiId ? { koperasiId, status: 'recorded' } : 'skip')
   const [selectedDepositId, setSelectedDepositId] = useState('')
   const deposit = deposits?.find((item) => item.id === selectedDepositId)
@@ -57,7 +58,7 @@ export function QcDepositDetailPage() {
             </div>
             <dl className="grid gap-3 sm:grid-cols-2">
               <div><dt>Anggota</dt><dd>{deposit.memberName}</dd></div>
-              <div><dt>Asal</dt><dd>{deposit.origin}</dd></div>
+              <div><dt>Asal Dusun Anggota</dt><dd>{deposit.origin ?? '-'}</dd></div>
               <div><dt>Berat</dt><dd>{formatKg(deposit.weightKg)}</dd></div>
               <div><dt>Tanggal Setor</dt><dd>{formatDate(deposit.submittedAt)}</dd></div>
               <div><dt>Status</dt><dd>{mapDepositStatus(deposit.status as any)}</dd></div>

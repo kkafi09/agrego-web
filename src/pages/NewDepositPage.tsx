@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { useMutation, useQuery } from 'convex/react'
+import toast from 'react-hot-toast'
 import { api } from '../../convex/_generated/api'
 import type { Page } from '../config/navigation'
 import { rolePermissions } from '../config/role-navigation'
 import type { AuthUser } from '../lib/auth'
+import { getAuthToken } from '../lib/auth'
 import PageHeader from '../components/layout/page-header'
 import NumberUnitInput from '../components/forms/number-unit-input'
 import { Button } from '../components/ui/button'
@@ -24,8 +26,8 @@ import {
 } from './shared'
 
 export function NewDepositPage({ goToPage, user }: { goToPage: (page: Page) => void; user: AuthUser | null }) {
-  const defaultKoperasi = useQuery(api.koperasi.getDefaultKoperasi)
-  const koperasiId = defaultKoperasi?._id
+  const currentKoperasi = useQuery(api.koperasi.getCurrentKoperasi, { token: getAuthToken() })
+  const koperasiId = currentKoperasi?._id
   const members = useQuery(api.masterData.searchMembers, koperasiId ? { koperasiId, searchTerm: '' } : 'skip')
   const commodities = useQuery(api.masterData.searchCommodities, { searchTerm: '' })
   const createDeposit = useMutation(api.deposits.createDeposit)
@@ -35,10 +37,9 @@ export function NewDepositPage({ goToPage, user }: { goToPage: (page: Page) => v
     weightKg: '',
     submittedAt: '',
     collector: '',
-    origin: '',
     notes: '',
   })
-  const [saved, setSaved] = useState(false)
+  const [, setSaved] = useState(false)
   const [errors, setErrors] = useState<DepositFormErrors>({})
   const canSubmit = Boolean(koperasiId && members?.length && commodities?.length)
   const canManageMembers = user ? rolePermissions[user.role].includes('members') : false
@@ -70,19 +71,23 @@ export function NewDepositPage({ goToPage, user }: { goToPage: (page: Page) => v
               return
             }
 
-            await createDeposit({
-              koperasiId,
-              memberId: form.memberId as any,
-              commodityId: form.commodityId as any,
-              depositNumber: `STR-${Date.now()}`,
-              weightKg: Number(form.weightKg),
-              submittedAt: new Date(form.submittedAt).getTime(),
-              origin: form.origin,
-              collectorName: form.collector,
-              notes: form.notes.trim() || undefined,
-            })
-            setSaved(true)
-            goToPage('deposits')
+            try {
+              await createDeposit({
+                koperasiId,
+                memberId: form.memberId as any,
+                commodityId: form.commodityId as any,
+                depositNumber: `STR-${Date.now()}`,
+                weightKg: Number(form.weightKg),
+                submittedAt: new Date(form.submittedAt).getTime(),
+                collectorName: form.collector,
+                notes: form.notes.trim() || undefined,
+              })
+              toast.success('Setoran berhasil disimpan.')
+              setSaved(false)
+              goToPage('deposits')
+            } catch (err) {
+              toast.error((err as Error).message || 'Gagal menyimpan setoran.')
+            }
           }}
         >
           <div className="grid gap-1 [&_h2]:text-lg [&_h2]:font-black [&_h2]:text-slate-950">
@@ -159,7 +164,7 @@ export function NewDepositPage({ goToPage, user }: { goToPage: (page: Page) => v
             </div>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2-slate-200">
+          <div className="grid gap-2">
             <div className="grid gap-2">
               <Label className="text-sm font-bold text-slate-700">Petugas Penerima</Label>
               <Input
@@ -169,16 +174,6 @@ export function NewDepositPage({ goToPage, user }: { goToPage: (page: Page) => v
                 onChange={(event) => updateField('collector', event.target.value)}
               />
               {errors.collector ? <small className="text-xs font-semibold text-rose-600">{errors.collector}</small> : null}
-            </div>
-            <div className="grid gap-2">
-              <Label className="text-sm font-bold text-slate-700">Asal Dusun</Label>
-              <Input
-                className="h-11 rounded-lg bg-white text-sm font-semibold text-slate-800"
-                aria-invalid={Boolean(errors.origin)}
-                value={form.origin}
-                onChange={(event) => updateField('origin', event.target.value)}
-              />
-              {errors.origin ? <small className="text-xs font-semibold text-rose-600">{errors.origin}</small> : null}
             </div>
           </div>
 
@@ -218,7 +213,6 @@ export function NewDepositPage({ goToPage, user }: { goToPage: (page: Page) => v
               <strong className="text-right text-sm font-black text-slate-950">{form.weightKg || '0'} kg</strong>
             </div>
           </div>
-          {saved ? <p className="mt-3 text-xs font-bold text-emerald-700">Setoran tersimpan.</p> : null}
         </aside>
       </div>
     </>

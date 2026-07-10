@@ -13,6 +13,7 @@ import {
 } from '../components/ui/dialog'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
+import ConfirmationDialog from '../components/forms/confirmation-dialog'
 
 type CommodityFormState = {
   _id?: string
@@ -31,10 +32,11 @@ const emptyCommodityForm: CommodityFormState = {
 
 export function CommoditiesPage() {
   const [searchTerm, setSearchTerm] = useState('')
-  const [saved, setSaved] = useState(false)
+  const [, setSaved] = useState(false)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [form, setForm] = useState<CommodityFormState>(emptyCommodityForm)
+  const [commodityToDelete, setCommodityToDelete] = useState<{ id: string; name: string } | null>(null)
 
   const commodityList = useQuery(api.masterData.searchCommodities, { searchTerm })
   const createCommodity = useMutation(api.masterData.createCommodity)
@@ -87,7 +89,6 @@ export function CommoditiesPage() {
           <table className="min-w-full border-collapse text-left text-sm">
             <thead className="bg-slate-50 text-xs font-black uppercase tracking-wide text-slate-500">
               <tr>
-                <th className="px-4 py-3">ID</th>
                 <th className="px-4 py-3">Komoditas</th>
                 <th className="px-4 py-3">Unit</th>
                 <th className="px-4 py-3">Minimum QS</th>
@@ -97,13 +98,12 @@ export function CommoditiesPage() {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {commodityList === undefined ? (
-                <tr><td colSpan={6} className="px-4 py-10 text-center text-sm font-semibold text-slate-500">Memuat data komoditas...</td></tr>
+                <tr><td colSpan={5} className="px-4 py-10 text-center text-sm font-semibold text-slate-500">Memuat data komoditas...</td></tr>
               ) : commodityList.length === 0 ? (
-                <tr><td colSpan={6} className="px-4 py-10 text-center text-sm font-semibold text-slate-500">Belum ada komoditas terdaftar.</td></tr>
+                <tr><td colSpan={5} className="px-4 py-10 text-center text-sm font-semibold text-slate-500">Belum ada komoditas terdaftar.</td></tr>
               ) : (
                 commodityList.map((commodity) => (
                   <tr className="transition hover:bg-emerald-50/50" key={commodity._id}>
-                    <td className="px-4 py-3 font-mono text-xs font-black text-emerald-700">{commodity._id}</td>
                     <td className="px-4 py-3 font-black text-slate-950">{commodity.name}</td>
                     <td className="px-4 py-3 font-semibold text-slate-700">{commodity.unit}</td>
                     <td className="px-4 py-3 font-semibold text-slate-700">{commodity.minimumQualityScore}</td>
@@ -133,19 +133,7 @@ export function CommoditiesPage() {
                           size="sm"
                           type="button"
                           className="text-rose-700 hover:bg-rose-50 hover:text-rose-800"
-                          onClick={async () => {
-                            if (window.confirm(`Hapus ${commodity.name}?`)) {
-                              try {
-                                await deleteCommodity({ commodityId: commodity._id })
-                                if (form._id === commodity._id) {
-                                  setForm(emptyCommodityForm)
-                                }
-                                toast.success('Komoditas berhasil dihapus.')
-                              } catch (err) {
-                                toast.error((err as Error).message || 'Gagal menghapus komoditas.')
-                              }
-                            }
-                          }}
+                          onClick={() => setCommodityToDelete({ id: commodity._id, name: commodity.name })}
                         >
                           Hapus
                         </Button>
@@ -160,7 +148,7 @@ export function CommoditiesPage() {
       </section>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-2xl">
+        <DialogContent className="bg-white sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>{form._id ? 'Ubah komoditas' : 'Tambah komoditas'}</DialogTitle>
             <DialogDescription>Data ini akan digunakan di setoran, kontrak, QC, dan alokasi.</DialogDescription>
@@ -235,7 +223,26 @@ export function CommoditiesPage() {
         </DialogContent>
       </Dialog>
 
-      {saved ? <p className="text-sm font-bold text-emerald-700">Data komoditas berhasil disimpan.</p> : null}
+      <ConfirmationDialog
+        isOpen={Boolean(commodityToDelete)}
+        title="Hapus komoditas?"
+        message={`Data ${commodityToDelete?.name ?? ''} akan dihapus.`}
+        confirmLabel="Hapus"
+        isDanger
+        onCancel={() => setCommodityToDelete(null)}
+        onConfirm={async () => {
+          if (!commodityToDelete) return
+          try {
+            await deleteCommodity({ commodityId: commodityToDelete.id as any })
+            if (form._id === commodityToDelete.id) setForm(emptyCommodityForm)
+            toast.success('Komoditas berhasil dihapus.')
+          } catch (err) {
+            toast.error((err as Error).message || 'Gagal menghapus komoditas.')
+          } finally {
+            setCommodityToDelete(null)
+          }
+        }}
+      />
     </>
   )
 }

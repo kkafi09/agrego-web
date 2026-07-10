@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useMutation, useQuery } from 'convex/react'
+import toast from 'react-hot-toast'
 import { api } from '../../convex/_generated/api'
+import { getAuthToken } from '../lib/auth'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
@@ -14,26 +16,24 @@ import {
 import { Textarea } from '../components/ui/textarea'
 import {
   type QcFormState,
-  calculateQualityScore,
   gradeOptions,
 } from './shared'
 
 export function QcFormPage() {
-  const defaultKoperasi = useQuery(api.koperasi.getDefaultKoperasi)
-  const koperasiId = defaultKoperasi?._id
+  const currentKoperasi = useQuery(api.koperasi.getCurrentKoperasi, { token: getAuthToken() })
+  const koperasiId = currentKoperasi?._id
   const deposits = useQuery(api.deposits.listDeposits, koperasiId ? { koperasiId, status: 'recorded' } : 'skip')
   const saveQualityCheck = useMutation(api.qualityChecks.saveQualityCheck)
-  const [saved, setSaved] = useState(false)
+  const [, setSaved] = useState(false)
   const [form, setForm] = useState<QcFormState>({
     depositId: '',
-    moisturePercent: '',
     sizeGrade: 'A',
     defectPercent: '',
     inspector: '',
     notes: '',
   })
-  const qualityScore = calculateQualityScore(form)
-  const scoreDecision = qualityScore >= 90 ? 'Prioritas' : qualityScore >= 82 ? 'Lolos' : 'Tahan'
+  const qualityGrade = form.sizeGrade
+  const scoreDecision = qualityGrade === 'A' ? 'Prioritas' : qualityGrade === 'D' ? 'Tahan' : 'Lolos'
   const canSubmit = Boolean(form.depositId && form.inspector.trim())
 
   function updateField(field: keyof QcFormState, value: string) {
@@ -60,17 +60,21 @@ export function QcFormPage() {
           onSubmit={async (event) => {
             event.preventDefault()
             if (!canSubmit) return
-            const result = await saveQualityCheck({
-              depositId: form.depositId as any,
-              moisturePercent: Number(form.moisturePercent),
-              sizeGrade: form.sizeGrade,
-              defectPercent: Number(form.defectPercent),
-              inspectorName: form.inspector,
-              notes: form.notes.trim() || undefined,
-            })
-            sessionStorage.setItem('agrego_selected_quality_check_id', result.qualityCheckId)
-            setSaved(true)
-            setForm({ depositId: '', moisturePercent: '', sizeGrade: 'A', defectPercent: '', inspector: '', notes: '' })
+            try {
+              const result = await saveQualityCheck({
+                depositId: form.depositId as any,
+                qualityGrade: form.sizeGrade,
+                defectPercent: Number(form.defectPercent),
+                inspectorName: form.inspector,
+                notes: form.notes.trim() || undefined,
+              })
+              sessionStorage.setItem('agrego_selected_quality_check_id', result.qualityCheckId)
+              toast.success('Hasil QC berhasil disimpan.')
+              setSaved(false)
+              setForm({ depositId: '', sizeGrade: 'A', defectPercent: '', inspector: '', notes: '' })
+            } catch (err) {
+              toast.error((err as Error).message || 'Gagal menyimpan hasil QC.')
+            }
           }}
         >
           <div className="grid gap-1 [&_h2]:text-lg [&_h2]:font-black [&_h2]:text-slate-950">
@@ -96,11 +100,7 @@ export function QcFormPage() {
 
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="grid gap-2">
-              <Label>Kadar Air (%)</Label>
-              <Input className="h-11 rounded-lg bg-white text-sm font-semibold text-slate-800" min="0" step="0.1" type="number" value={form.moisturePercent} onChange={(event) => updateField('moisturePercent', event.target.value)} />
-            </label>
-            <label className="grid gap-2">
-              <Label>Grade Ukuran</Label>
+              <Label>Grade QS</Label>
               <Select value={form.sizeGrade} onValueChange={(value) => updateField('sizeGrade', value)}>
                 <SelectTrigger className="h-11 w-full rounded-lg bg-white text-sm font-semibold text-slate-800">
                   <SelectValue />
@@ -133,7 +133,6 @@ export function QcFormPage() {
             Simpan QC
           </Button>
           {deposits?.length === 0 ? <p className="text-sm font-bold text-emerald-700">Belum ada setoran tercatat yang menunggu QC.</p> : null}
-          {saved ? <p className="text-sm font-bold text-emerald-700">Hasil QC tersimpan.</p> : null}
         </form>
 
         <aside className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm" aria-label="Preview input QC">
@@ -142,15 +141,13 @@ export function QcFormPage() {
             <h2>{deposits?.find((deposit) => deposit.id === form.depositId)?.depositNumber ?? '-'}</h2>
           </div>
           <dl className="mt-4 grid gap-3">
-            <div><dt className="text-xs font-semibold text-slate-500">Kadar Air</dt><dd className="mt-1 text-sm font-black text-slate-950">{form.moisturePercent || '0'}%</dd></div>
-            <div><dt className="text-xs font-semibold text-slate-500">Grade</dt><dd className="mt-1 text-sm font-black text-slate-950">{form.sizeGrade}</dd></div>
+            <div><dt className="text-xs font-semibold text-slate-500">Grade QS</dt><dd className="mt-1 text-sm font-black text-slate-950">{form.sizeGrade}</dd></div>
             <div><dt className="text-xs font-semibold text-slate-500">Kerusakan</dt><dd className="mt-1 text-sm font-black text-slate-950">{form.defectPercent || '0'}%</dd></div>
             <div><dt className="text-xs font-semibold text-slate-500">Petugas</dt><dd className="mt-1 text-sm font-black text-slate-950">{form.inspector || '-'}</dd></div>
           </dl>
           <div className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
-            <span className="text-xs font-black uppercase tracking-[0.16em] text-emerald-700">Quality Score</span>
-            <strong className="mt-2 block text-4xl font-black text-slate-950">{qualityScore}</strong>
-            <div className="mt-3 h-2 overflow-hidden rounded-full bg-white" aria-label={`Quality score ${qualityScore}`}><span className="block h-full rounded-full bg-emerald-600" style={{ width: `${qualityScore}%` }} /></div>
+            <span className="text-xs font-black uppercase tracking-[0.16em] text-emerald-700">Quality Grade</span>
+            <strong className="mt-2 block text-4xl font-black text-slate-950">{qualityGrade}</strong>
             <p className="mt-3 text-sm font-semibold text-slate-600">{scoreDecision} untuk standar supply pool koperasi.</p>
           </div>
         </aside>

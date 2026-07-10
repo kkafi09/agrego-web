@@ -13,8 +13,6 @@ const breadcrumbMap: Record<Page, string[]> = {
   qcDepositDetail: ['Operasional', 'Quality Control', 'Detail Setoran QC'],
   qcForm: ['Operasional', 'Quality Control', 'Form QC'],
   qcResultDetail: ['Operasional', 'Quality Control', 'Detail Hasil QC'],
-  allocation: ['Operasional', 'Alokasi Stok'],
-  allocationStatus: ['Operasional', 'Status Alokasi'],
   contracts: ['Kontrak', 'Daftar Kontrak'],
   newContract: ['Kontrak', 'Kontrak Baru'],
   contractDetail: ['Kontrak', 'Detail Kontrak'],

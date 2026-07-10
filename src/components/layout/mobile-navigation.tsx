@@ -10,6 +10,7 @@ import {
   LogOut
 } from 'lucide-react'
 import { cn } from '../../lib/utils'
+import BrandLogo from '../brand/brand-logo'
 
 interface MobileNavigationProps {
   currentPage: Page
@@ -73,15 +74,7 @@ export default function MobileNavigation({
     <>
       {/* Mobile Top Sticky Bar */}
       <div className="sticky top-0 z-40 flex h-14 items-center justify-between border-b border-slate-200 bg-white/95 px-4 backdrop-blur lg:hidden" aria-label="Header Mobile">
-        <span className="text-base font-black text-[#0B2F15]">AGREGO</span>
-        <button
-          className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-700 text-xs font-black text-white"
-          type="button"
-          onClick={() => onPageChange('profile')}
-          aria-label="Profil saya"
-        >
-          <div>{getInitials(user.name)}</div>
-        </button>
+        <BrandLogo height={28} />
       </div>
 
       <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-slate-200 bg-white/95 px-2 pb-[max(env(safe-area-inset-bottom),8px)] pt-2 shadow-[0_-12px_30px_rgba(15,23,42,0.08)] backdrop-blur lg:hidden" aria-label="Navigasi Bawah">

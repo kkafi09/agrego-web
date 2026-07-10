@@ -4,8 +4,6 @@ import {
   History,
   ClipboardCheck,
   ClipboardList,
-  Boxes,
-  Warehouse,
   FileSpreadsheet,
   FilePlus,
   FileText,
@@ -25,8 +23,6 @@ export type Page =
   | 'qcDepositDetail'
   | 'qcForm'
   | 'qcResultDetail'
-  | 'allocation'
-  | 'allocationStatus'
   | 'contracts'
   | 'newContract'
   | 'contractDetail'
@@ -65,8 +61,6 @@ export const navigationGroups: NavigationGroup[] = [
       { id: 'deposits', label: 'Riwayat Setoran', icon: History },
       { id: 'qcForm', label: 'Quality Control', icon: ClipboardCheck },
       { id: 'qcHistory', label: 'Riwayat QC', icon: ClipboardList },
-      { id: 'allocation', label: 'Alokasi Stok', icon: Boxes },
-      { id: 'allocationStatus', label: 'Status Alokasi', icon: Warehouse }
     ]
   },
   {

@@ -12,14 +12,8 @@ export const rolePermissions: Record<Role, Page[]> = {
     'qcHistory',
     'qcDepositDetail',
     'qcResultDetail',
-    'allocation',
-    'allocationStatus',
     'contracts',
-    'newContract',
     'contractDetail',
-    'depositReport',
-    'profitShares',
-    'profile',
     'members',
     'commodities',
     'cooperativeProfile'
@@ -29,7 +23,6 @@ export const rolePermissions: Record<Role, Page[]> = {
     'contracts',
     'newContract',
     'contractDetail',
-    'allocationStatus',
     'profile'
   ],
   Admin: [
@@ -38,7 +31,6 @@ export const rolePermissions: Record<Role, Page[]> = {
     'commodities',
     'contracts',
     'contractDetail',
-    'allocationStatus',
     'profile'
   ]
 }

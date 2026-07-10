@@ -76,14 +76,15 @@ export default defineSchema({
   }).index("by_name", ["name"]),
   contracts: defineTable({
     buyerId: v.id("users"),
-    koperasiId: v.id("koperasiProfiles"),
+    koperasiId: v.optional(v.id("koperasiProfiles")),
     commodityId: v.id("commodities"),
     contractNumber: v.string(),
     title: v.optional(v.string()),
     targetVolumeKg: v.number(),
     fulfilledVolumeKg: v.optional(v.number()),
     fulfillmentPercent: v.optional(v.number()),
-    minimumQualityScore: v.number(),
+    minimumQualityScore: v.optional(v.number()),
+    minimumQualityGrade: v.optional(v.union(v.literal("A"), v.literal("B"), v.literal("C"), v.literal("D"))),
     pricePerKg: v.number(),
     deadlineAt: v.number(),
     status: v.union(
@@ -107,7 +108,7 @@ export default defineSchema({
     depositNumber: v.string(),
     weightKg: v.number(),
     submittedAt: v.number(),
-    origin: v.string(),
+    origin: v.optional(v.string()),
     collectorName: v.string(),
     notes: v.optional(v.string()),
     status: v.union(
@@ -116,6 +117,7 @@ export default defineSchema({
       v.literal("allocated"),
       v.literal("rejected"),
     ),
+    qualityGrade: v.optional(v.union(v.literal("A"), v.literal("B"), v.literal("C"), v.literal("D"))),
     qualityScore: v.optional(v.number()),
     qualityDecision: v.optional(
       v.union(
@@ -127,8 +129,9 @@ export default defineSchema({
     qualityCheckedAt: v.optional(v.number()),
     qcData: v.optional(
       v.object({
-        moisturePercent: v.number(),
-        sizeGrade: v.string(),
+        moisturePercent: v.optional(v.number()),
+        sizeGrade: v.optional(v.string()),
+        qualityGrade: v.optional(v.string()),
         defectPercent: v.number(),
         notes: v.optional(v.string()),
       }),
@@ -144,7 +147,8 @@ export default defineSchema({
     contractId: v.id("contracts"),
     depositId: v.id("deposits"),
     allocatedWeightKg: v.number(),
-    qualityScoreSnapshot: v.number(),
+    qualityScoreSnapshot: v.optional(v.number()),
+    qualityGradeSnapshot: v.optional(v.union(v.literal("A"), v.literal("B"), v.literal("C"), v.literal("D"))),
     status: v.union(
       v.literal("allocated"),
       v.literal("released"),
@@ -159,10 +163,11 @@ export default defineSchema({
   qualityChecks: defineTable({
     koperasiId: v.id("koperasiProfiles"),
     depositId: v.id("deposits"),
-    moisturePercent: v.number(),
-    sizeGrade: v.union(v.literal("A"), v.literal("B"), v.literal("C")),
+    moisturePercent: v.optional(v.number()),
+    sizeGrade: v.optional(v.union(v.literal("A"), v.literal("B"), v.literal("C"), v.literal("D"))),
+    qualityGrade: v.optional(v.union(v.literal("A"), v.literal("B"), v.literal("C"), v.literal("D"))),
     defectPercent: v.number(),
-    qualityScore: v.number(),
+    qualityScore: v.optional(v.number()),
     decision: v.union(
       v.literal("priority"),
       v.literal("passed"),

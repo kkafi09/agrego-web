@@ -1,16 +1,32 @@
 import { v } from "convex/values";
 import { action, mutation, query } from "./_generated/server";
+import { requireRole } from "./auth";
+
+type QualityGrade = "A" | "B" | "C" | "D";
+
+function gradeRank(grade: QualityGrade) {
+  return grade === "A" ? 0 : grade === "B" ? 1 : grade === "C" ? 2 : 3;
+}
+
+function legacyGrade(score: number | undefined): QualityGrade {
+  if (typeof score !== "number") return "D";
+  if (score >= 90) return "A";
+  if (score >= 82) return "B";
+  if (score >= 70) return "C";
+  return "D";
+}
 
 export const contractsNeedingAllocation = query({
   args: {
-    koperasiId: v.id("koperasiProfiles"),
+    token: v.string(),
   },
   handler: async (ctx, args) => {
+    const actor = await requireRole(ctx, args.token, ["cooperative"]);
+    const koperasi = await ctx.db.query("koperasiProfiles").withIndex("by_admin", (q) => q.eq("adminId", actor._id)).first();
+    if (!koperasi) throw new Error("Profil koperasi belum tersedia.");
     const contracts = await ctx.db
       .query("contracts")
-      .withIndex("by_koperasi_and_status", (q) =>
-        q.eq("koperasiId", args.koperasiId).eq("status", "active"),
-      )
+      .withIndex("by_status", (q) => q.eq("status", "active"))
       .collect();
 
     const rows = await Promise.all(
@@ -39,40 +55,45 @@ export const contractsNeedingAllocation = query({
       }),
     );
 
-    return rows
-      .filter((row) => row.remainingKg > 0)
-      .sort((a, b) => a.deadlineAt - b.deadlineAt);
+    return rows.sort((a, b) => a.deadlineAt - b.deadlineAt);
   },
 });
 
 export const availableDepositsForContract = query({
   args: {
+    token: v.string(),
     contractId: v.id("contracts"),
   },
   handler: async (ctx, args) => {
+    const actor = await requireRole(ctx, args.token, ["cooperative"]);
+    const koperasi = await ctx.db.query("koperasiProfiles").withIndex("by_admin", (q) => q.eq("adminId", actor._id)).first();
+    if (!koperasi) throw new Error("Profil koperasi belum tersedia.");
     const contract = await ctx.db.get(args.contractId);
     if (!contract) {
       return null;
     }
+    if (contract.status !== "active") throw new Error("Kontrak tidak aktif.");
 
     const deposits = await ctx.db
       .query("deposits")
       .withIndex("by_koperasi_and_commodity", (q) =>
         q
-          .eq("koperasiId", contract.koperasiId)
+          .eq("koperasiId", koperasi._id)
           .eq("commodityId", contract.commodityId),
       )
       .collect();
 
-    const availableDeposits = deposits.filter(
-      (deposit) =>
-        deposit.status === "quality_checked" &&
-        (deposit.qualityScore ?? 0) >= contract.minimumQualityScore,
-    );
+    const minimumGrade = contract.minimumQualityGrade ?? legacyGrade(contract.minimumQualityScore);
+    const availableDeposits = deposits.filter((deposit) => {
+      const passedQc = deposit.status === "quality_checked" ||
+        (deposit.status === "recorded" && (deposit.qualityDecision === "passed" || deposit.qualityDecision === "priority"));
+      const depositGrade = deposit.qualityGrade ?? legacyGrade(deposit.qualityScore);
+      return passedQc && gradeRank(depositGrade) <= gradeRank(minimumGrade);
+    });
 
     return Promise.all(
       availableDeposits
-        .sort((a, b) => (b.qualityScore ?? 0) - (a.qualityScore ?? 0))
+        .sort((a, b) => gradeRank(a.qualityGrade ?? legacyGrade(a.qualityScore)) - gradeRank(b.qualityGrade ?? legacyGrade(b.qualityScore)))
         .map(async (deposit) => {
           const member = await ctx.db.get(deposit.memberId);
 
@@ -82,6 +103,7 @@ export const availableDepositsForContract = query({
             memberName: member?.name ?? "Anggota tidak ditemukan",
             availableWeightKg: deposit.weightKg,
             qualityScore: deposit.qualityScore ?? null,
+            qualityGrade: deposit.qualityGrade ?? legacyGrade(deposit.qualityScore),
             submittedAt: deposit.submittedAt,
           };
         }),
@@ -91,12 +113,16 @@ export const availableDepositsForContract = query({
 
 export const allocateDepositToContract = mutation({
   args: {
+    token: v.string(),
     contractId: v.id("contracts"),
     depositId: v.id("deposits"),
     allocatedWeightKg: v.number(),
     notes: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    const actor = await requireRole(ctx, args.token, ["cooperative"]);
+    const koperasi = await ctx.db.query("koperasiProfiles").withIndex("by_admin", (q) => q.eq("adminId", actor._id)).first();
+    if (!koperasi) throw new Error("Profil koperasi belum tersedia.");
     const [contract, deposit] = await Promise.all([
       ctx.db.get(args.contractId),
       ctx.db.get(args.depositId),
@@ -105,25 +131,30 @@ export const allocateDepositToContract = mutation({
     if (!contract) {
       throw new Error("Kontrak tidak ditemukan.");
     }
+    if (contract.status !== "active") throw new Error("Kontrak tidak aktif.");
 
     if (!deposit) {
       throw new Error("Setoran tidak ditemukan.");
     }
 
-    if (deposit.koperasiId !== contract.koperasiId) {
-      throw new Error("Setoran dan kontrak berada di koperasi berbeda.");
+    if (deposit.koperasiId !== koperasi._id) {
+      throw new Error("Setoran bukan milik koperasi yang sedang login.");
     }
 
     if (deposit.commodityId !== contract.commodityId) {
       throw new Error("Komoditas setoran tidak cocok dengan kontrak.");
     }
 
-    if (deposit.status !== "quality_checked") {
+    const passedQc = deposit.status === "quality_checked" ||
+      (deposit.status === "recorded" && (deposit.qualityDecision === "passed" || deposit.qualityDecision === "priority"));
+    if (!passedQc) {
       throw new Error("Setoran harus lolos QC sebelum dialokasikan.");
     }
 
-    if ((deposit.qualityScore ?? 0) < contract.minimumQualityScore) {
-      throw new Error("Quality score setoran tidak memenuhi minimum kontrak.");
+    const minimumGrade = contract.minimumQualityGrade ?? legacyGrade(contract.minimumQualityScore);
+    const depositGrade = deposit.qualityGrade ?? legacyGrade(deposit.qualityScore);
+    if (gradeRank(depositGrade) > gradeRank(minimumGrade)) {
+      throw new Error("Grade setoran tidak memenuhi minimum grade kontrak.");
     }
 
     if (args.allocatedWeightKg <= 0 || args.allocatedWeightKg > deposit.weightKg) {
@@ -131,11 +162,12 @@ export const allocateDepositToContract = mutation({
     }
 
     const allocationId = await ctx.db.insert("supplyPools", {
-      koperasiId: contract.koperasiId,
+      koperasiId: koperasi._id,
       contractId: args.contractId,
       depositId: args.depositId,
       allocatedWeightKg: args.allocatedWeightKg,
       qualityScoreSnapshot: deposit.qualityScore ?? 0,
+      qualityGradeSnapshot: depositGrade,
       status: "allocated",
       notes: args.notes,
       allocatedAt: Date.now(),
@@ -151,9 +183,11 @@ export const allocateDepositToContract = mutation({
 
 export const recalculateContractProgress = mutation({
   args: {
+    token: v.string(),
     contractId: v.id("contracts"),
   },
   handler: async (ctx, args) => {
+    await requireRole(ctx, args.token, ["cooperative", "buyer", "admin"]);
     const contract = await ctx.db.get(args.contractId);
     if (!contract) {
       throw new Error("Kontrak tidak ditemukan.");
@@ -210,7 +244,7 @@ export const allocationSummaryByContract = query({
       activeAllocations.length > 0
         ? Math.round(
             activeAllocations.reduce(
-              (total, allocation) => total + allocation.qualityScoreSnapshot,
+              (total, allocation) => total + (allocation.qualityScoreSnapshot ?? 0),
               0,
             ) / activeAllocations.length,
           )

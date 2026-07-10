@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useQuery, useMutation } from 'convex/react'
 import toast from 'react-hot-toast'
 import { api } from '../../convex/_generated/api'
+import { getAuthToken } from '../lib/auth'
 import { Button } from '../components/ui/button'
 import {
   Dialog,
@@ -13,6 +14,7 @@ import {
 } from '../components/ui/dialog'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
+import ConfirmationDialog from '../components/forms/confirmation-dialog'
 import {
   Select,
   SelectContent,
@@ -37,14 +39,15 @@ const emptyMemberForm: MemberFormState = {
 }
 
 export function MembersPage() {
-  const defaultKoperasi = useQuery(api.koperasi.getDefaultKoperasi)
-  const koperasiId = defaultKoperasi?._id
+  const currentKoperasi = useQuery(api.koperasi.getCurrentKoperasi, { token: getAuthToken() })
+  const koperasiId = currentKoperasi?._id
   const commodities = useQuery(api.masterData.searchCommodities, { searchTerm: '' })
 
   const [searchTerm, setSearchTerm] = useState('')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [form, setForm] = useState<MemberFormState>(emptyMemberForm)
+  const [memberToDelete, setMemberToDelete] = useState<{ id: string; name: string } | null>(null)
 
   const memberList = useQuery(
     api.masterData.searchMembers,
@@ -116,8 +119,7 @@ export function MembersPage() {
     }
   }
 
-  async function handleDelete(memberId: string, memberName: string) {
-    if (!window.confirm(`Hapus ${memberName}?`)) return
+  async function handleDelete(memberId: string) {
     try {
       await deleteMember({ memberId: memberId as any })
       toast.success('Anggota berhasil dihapus.')
@@ -213,7 +215,7 @@ export function MembersPage() {
                               size="sm"
                               type="button"
                               className="text-rose-700 hover:bg-rose-50 hover:text-rose-800"
-                              onClick={() => handleDelete(member._id, member.name)}
+                              onClick={() => setMemberToDelete({ id: member._id, name: member.name })}
                             >
                               Hapus
                             </Button>
@@ -285,6 +287,19 @@ export function MembersPage() {
           </form>
         </DialogContent>
       </Dialog>
+      <ConfirmationDialog
+        isOpen={Boolean(memberToDelete)}
+        title="Hapus anggota?"
+        message={`Data ${memberToDelete?.name ?? ''} akan dihapus.`}
+        confirmLabel="Hapus"
+        isDanger
+        onCancel={() => setMemberToDelete(null)}
+        onConfirm={async () => {
+          if (!memberToDelete) return
+          await handleDelete(memberToDelete.id)
+          setMemberToDelete(null)
+        }}
+      />
     </>
   )
 }

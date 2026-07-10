@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { useQuery } from 'convex/react'
 import { api } from '../../convex/_generated/api'
 import type { Page } from '../config/navigation'
+import type { AuthUser } from '../lib/auth'
+import { getAuthToken } from '../lib/auth'
 import { getStatusStyle } from '../config/status-config'
 import { Button } from '../components/ui/button'
 import {
@@ -19,14 +21,13 @@ import {
   progressPercent,
 } from './shared'
 
-export function ContractsPage({ goToPage }: { goToPage: (page: Page) => void }) {
-  const defaultKoperasi = useQuery(api.koperasi.getDefaultKoperasi)
-  const koperasiId = defaultKoperasi?._id
+export function ContractsPage({ goToPage, user }: { goToPage: (page: Page) => void; user: AuthUser | null }) {
   const [statusFilter, setStatusFilter] = useState('Semua')
   const [commodityFilter, setCommodityFilter] = useState('Semua')
   const commodityList = useQuery(api.masterData.searchCommodities, { searchTerm: '' })
-  const contracts = useQuery(api.contracts.listContracts, koperasiId ? { koperasiId } : 'skip')
-  const rows = contracts ?? []
+  const adminContracts = useQuery(api.contracts.listAllContracts, user?.role === 'Admin' ? { token: getAuthToken() } : 'skip')
+  const contracts = useQuery(api.contracts.listContracts, user?.role !== 'Admin' ? { token: getAuthToken() } : 'skip')
+  const rows = user?.role === 'Admin' ? (adminContracts ?? []) : (contracts ?? [])
   const totalContractValue = rows.reduce(
     (total, contract) => total + contract.targetVolumeKg * contract.pricePerKg,
     0,
@@ -57,9 +58,7 @@ export function ContractsPage({ goToPage }: { goToPage: (page: Page) => void }) 
             <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-700">Kontrak</p>
             <h2>Permintaan industri dan status pemenuhan</h2>
           </div>
-          <Button className="h-11 rounded-lg bg-emerald-700 text-sm font-black text-white hover:bg-emerald-800" type="button" onClick={() => goToPage('newContract')}>
-            Buat Kontrak
-          </Button>
+          {user?.role === 'Buyer' ? <Button className="h-11 rounded-lg bg-emerald-700 text-sm font-black text-white hover:bg-emerald-800" type="button" onClick={() => goToPage('newContract')}>Buat Kontrak</Button> : null}
         </div>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4" aria-label="Filter daftar kontrak">
           <label className="grid gap-2">
@@ -100,14 +99,14 @@ export function ContractsPage({ goToPage }: { goToPage: (page: Page) => void }) 
                   <th className="px-4 py-3">Kontrak</th>
                   <th className="px-4 py-3">Komoditas</th>
                   <th className="px-4 py-3">Target</th>
-                  <th className="px-4 py-3">Minimum QS</th>
+                  <th className="px-4 py-3">Minimum Grade</th>
                   <th className="px-4 py-3">Tenggat</th>
                   <th className="px-4 py-3">Progress</th>
                   <th className="px-4 py-3 text-right">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {contracts === undefined && koperasiId ? (
+                {(user?.role === 'Admin' ? adminContracts : contracts) === undefined ? (
                   <tr><td colSpan={7} className="px-4 py-10 text-center text-sm font-semibold text-slate-500">Memuat data kontrak...</td></tr>
                 ) : filteredContracts.length === 0 ? (
                   <tr><td colSpan={7} className="px-4 py-10 text-center text-sm font-semibold text-slate-500">Belum ada kontrak buyer.</td></tr>
@@ -125,7 +124,7 @@ export function ContractsPage({ goToPage }: { goToPage: (page: Page) => void }) 
                       </td>
                       <td className="px-4 py-3 font-semibold text-slate-700">{contract.commodityName}</td>
                       <td className="px-4 py-3 font-semibold text-slate-700">{formatKg(contract.targetVolumeKg)}</td>
-                      <td className="px-4 py-3 font-semibold text-slate-700">{contract.minimumQualityScore}</td>
+                      <td className="px-4 py-3 font-semibold text-slate-700">{contract.minimumQualityGrade}</td>
                       <td className="px-4 py-3 font-semibold text-slate-700">{formatDate(contract.deadlineAt)}</td>
                       <td className="px-4 py-3">
                         <div className="flex min-w-36 items-center gap-2">

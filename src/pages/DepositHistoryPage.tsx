@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useQuery } from 'convex/react'
 import { api } from '../../convex/_generated/api'
+import { getAuthToken } from '../lib/auth'
 import PageHeader from '../components/layout/page-header'
 import MetricCard from '../components/dashboard/kpi-tile'
 import DataTable from '../components/data-display/record-grid'
@@ -20,15 +21,15 @@ type DepositRow = {
   commodityName: string
   weightKg: number
   submittedAt: number
-  origin: string
+  origin: string | null
   collectorName: string
   status: DepositStatus
-  qualityScore: number | null
+  qualityGrade: string | null
 }
 
 export function DepositHistoryPage() {
-  const defaultKoperasi = useQuery(api.koperasi.getDefaultKoperasi)
-  const koperasiId = defaultKoperasi?._id
+  const currentKoperasi = useQuery(api.koperasi.getCurrentKoperasi, { token: getAuthToken() })
+  const koperasiId = currentKoperasi?._id
   const records = useQuery(api.deposits.listDeposits, koperasiId ? { koperasiId } : 'skip') as DepositRow[] | undefined
   const deposits = useMemo(() => records ?? [], [records])
   const [selectedDepositId, setSelectedDepositId] = useState<string | undefined>()
@@ -96,7 +97,7 @@ export function DepositHistoryPage() {
     {
       header: 'Quality',
       render: (deposit: DepositRow) => (
-        <span>{deposit.qualityScore === null ? '-' : `QS ${deposit.qualityScore}`}</span>
+        <span>{deposit.qualityGrade ? `Grade ${deposit.qualityGrade}` : '-'}</span>
       ),
     },
     {
@@ -161,7 +162,7 @@ export function DepositHistoryPage() {
                 <div className="mt-2 flex items-center gap-2">
                   <StatusBadge status={mapDepositStatus(selectedDeposit.status)} />
                   <span className="text-xs font-semibold text-slate-500">
-                    {selectedDeposit.qualityScore === null ? 'Quality belum tersedia' : `QS ${selectedDeposit.qualityScore}`}
+                    {selectedDeposit.qualityGrade ? `Grade ${selectedDeposit.qualityGrade}` : 'Quality belum tersedia'}
                   </span>
                 </div>
               </div>

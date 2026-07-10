@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { navigationGroups, type Page } from '../../config/navigation'
 import { rolePermissions, type Role } from '../../config/role-navigation'
-import { LogOut, ChevronLeft, ChevronRight, User as UserIcon } from 'lucide-react'
+import { LogOut, ChevronLeft, ChevronRight } from 'lucide-react'
 import { cn } from '../../lib/utils'
+import BrandLogo from '../brand/brand-logo'
 
 interface AppSidebarProps {
   currentPage: Page
@@ -53,16 +54,9 @@ export default function AppSidebar({
       isCollapsed ? 'w-[72px]' : 'w-64',
     )} aria-label="Sidebar Utama">
       <div className="flex h-16 items-center gap-3 border-b border-white/10 px-4">
-        {!isCollapsed && (
-          <div className="min-w-0 flex-1">
-            <span className="block text-lg font-black tracking-normal text-white">AGREGO</span>
-            <span className="block truncate text-[11px] font-semibold text-white/55">Collective Supply Platform</span>
-          </div>
-        )}
+        {!isCollapsed && <BrandLogo height={34} className="max-w-[170px] brightness-0 invert" />}
         {isCollapsed && (
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-sm font-black text-white">
-            AG
-          </div>
+          <img src="/brand/agrego-brand-mark.svg" alt="Agrego" className="h-10 w-10 object-contain" />
         )}
         <button
           className="ml-auto inline-flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-white/75 transition hover:bg-white/10 hover:text-white"
@@ -134,19 +128,6 @@ export default function AppSidebar({
                 'absolute bottom-14 z-50 w-48 overflow-hidden rounded-xl border border-slate-200 bg-white text-slate-700 shadow-xl',
                 isCollapsed ? 'left-12' : 'left-0',
               )} role="menu">
-                <button
-                  className="flex w-full items-center gap-2 px-3 py-2.5 text-sm font-bold transition hover:bg-slate-50"
-                  role="menuitem"
-                  type="button"
-                  onClick={() => {
-                    onPageChange('profile')
-                    setShowUserMenu(false)
-                  }}
-                >
-                  <UserIcon size={14} />
-                  <span>Profil Saya</span>
-                </button>
-                <div className="h-px bg-slate-100" />
                 <button
                   className="flex w-full items-center gap-2 px-3 py-2.5 text-sm font-bold text-rose-700 transition hover:bg-rose-50"
                   role="menuitem"

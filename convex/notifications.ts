@@ -60,6 +60,10 @@ export const createContractNotification = mutation({
       throw new Error("Kontrak tidak ditemukan.");
     }
 
+    if (!contract.koperasiId) {
+      return null;
+    }
+
     return ctx.db.insert("contractNotifications", {
       koperasiId: contract.koperasiId,
       contractId: args.contractId,

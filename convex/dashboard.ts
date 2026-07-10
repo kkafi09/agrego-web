@@ -1,5 +1,19 @@
 import { v } from "convex/values";
 import { query } from "./_generated/server";
+import { requireRole } from "./auth";
+
+function legacyQualityGrade(score: number | undefined) {
+  if (typeof score !== "number") return "D" as const;
+  if (score >= 90) return "A" as const;
+  if (score >= 82) return "B" as const;
+  if (score >= 70) return "C" as const;
+  return "D" as const;
+}
+
+function betterGrade(current: "A" | "B" | "C" | "D" | null, next: "A" | "B" | "C" | "D") {
+  if (!current) return next;
+  return ["A", "B", "C", "D"].indexOf(next) < ["A", "B", "C", "D"].indexOf(current) ? next : current;
+}
 
 export const stockSummaries = query({
   args: {
@@ -22,6 +36,7 @@ export const stockSummaries = query({
         pendingQcKg: number;
         qualityTotal: number;
         qualityCount: number;
+        qualityGrade: "A" | "B" | "C" | "D" | null;
         depositCount: number;
       }
     >();
@@ -46,6 +61,7 @@ export const stockSummaries = query({
         pendingQcKg: 0,
         qualityTotal: 0,
         qualityCount: 0,
+        qualityGrade: null,
         depositCount: 0,
       };
 
@@ -64,6 +80,11 @@ export const stockSummaries = query({
         current.qualityTotal += deposit.qualityScore;
         current.qualityCount += 1;
       }
+      if (deposit.qualityGrade) {
+        current.qualityGrade = betterGrade(current.qualityGrade, deposit.qualityGrade);
+      } else if (typeof deposit.qualityScore === "number") {
+        current.qualityGrade = betterGrade(current.qualityGrade, legacyQualityGrade(deposit.qualityScore));
+      }
 
       summaries.set(key, current);
     }
@@ -80,6 +101,7 @@ export const stockSummaries = query({
           summary.qualityCount > 0
             ? Math.round(summary.qualityTotal / summary.qualityCount)
             : null,
+        qualityGrade: summary.qualityGrade,
         depositCount: summary.depositCount,
       }))
       .sort((a, b) => b.totalKg - a.totalKg);
@@ -88,14 +110,13 @@ export const stockSummaries = query({
 
 export const activeContractProgress = query({
   args: {
-    koperasiId: v.id("koperasiProfiles"),
+    token: v.string(),
   },
   handler: async (ctx, args) => {
+    await requireRole(ctx, args.token, ["cooperative", "buyer", "admin"]);
     const contracts = await ctx.db
       .query("contracts")
-      .withIndex("by_koperasi_and_status", (q) =>
-        q.eq("koperasiId", args.koperasiId).eq("status", "active"),
-      )
+      .withIndex("by_status", (q) => q.eq("status", "active"))
       .collect();
 
     const progress = [];
@@ -129,6 +150,7 @@ export const activeContractProgress = query({
         remainingKg: Math.max(contract.targetVolumeKg - fulfilledKg, 0),
         percent,
         minimumQualityScore: contract.minimumQualityScore,
+        minimumQualityGrade: contract.minimumQualityGrade ?? legacyQualityGrade(contract.minimumQualityScore),
         pricePerKg: contract.pricePerKg,
         deadlineAt: contract.deadlineAt,
         allocationCount: allocations.length,
@@ -141,14 +163,20 @@ export const activeContractProgress = query({
 
 export const supplyPoolStatuses = query({
   args: {
-    koperasiId: v.id("koperasiProfiles"),
+    token: v.string(),
+    koperasiId: v.optional(v.id("koperasiProfiles")),
   },
   handler: async (ctx, args) => {
+    const actor = await requireRole(ctx, args.token, ["cooperative", "admin"]);
+    const koperasi = actor.role === "cooperative"
+      ? await ctx.db.query("koperasiProfiles").withIndex("by_admin", (q) => q.eq("adminId", actor._id)).first()
+      : args.koperasiId
+        ? await ctx.db.get(args.koperasiId)
+        : await ctx.db.query("koperasiProfiles").first();
+    if (!koperasi) throw new Error("Profil koperasi belum tersedia.");
     const contracts = await ctx.db
       .query("contracts")
-      .withIndex("by_koperasi_and_status", (q) =>
-        q.eq("koperasiId", args.koperasiId).eq("status", "active"),
-      )
+      .withIndex("by_status", (q) => q.eq("status", "active"))
       .collect();
 
     const statuses = [];
@@ -164,7 +192,7 @@ export const supplyPoolStatuses = query({
           .query("deposits")
           .withIndex("by_koperasi_and_commodity", (q) =>
             q
-              .eq("koperasiId", args.koperasiId)
+              .eq("koperasiId", koperasi._id)
               .eq("commodityId", contract.commodityId),
           )
           .collect(),
@@ -180,14 +208,13 @@ export const supplyPoolStatuses = query({
       const candidateWeightKg = readyDeposits
         .filter((deposit) => deposit.status === "quality_checked")
         .reduce((total, deposit) => total + deposit.weightKg, 0);
-      const contributors = new Set(
-        allocatedDeposits
-          .filter((deposit) => deposit !== null)
-          .map((deposit) => deposit.memberId),
-      );
+      const contributors = new Set(allocatedDeposits.filter((deposit) => deposit !== null).map((deposit) => deposit.memberId));
       const scoreValues = allocatedDeposits
         .map((deposit) => deposit?.qualityScore)
         .filter((score): score is number => typeof score === "number");
+      const gradeValues = allocatedDeposits
+        .map((deposit) => deposit?.qualityGrade ?? legacyQualityGrade(deposit?.qualityScore))
+        .filter((grade): grade is "A" | "B" | "C" | "D" => Boolean(grade));
       const poolQualityScore =
         scoreValues.length > 0
           ? Math.round(
@@ -206,6 +233,9 @@ export const supplyPoolStatuses = query({
         contributors: contributors.size,
         allocationCount: allocations.length,
         poolQualityScore,
+        poolQualityGrade: gradeValues.length > 0
+          ? gradeValues.sort((a, b) => ["A", "B", "C", "D"].indexOf(a) - ["A", "B", "C", "D"].indexOf(b))[0]
+          : null,
         percentAllocated: Math.min(
           100,
           Math.round((allocatedWeightKg / contract.targetVolumeKg) * 100),
@@ -214,5 +244,55 @@ export const supplyPoolStatuses = query({
     }
 
     return statuses.sort((a, b) => b.percentAllocated - a.percentAllocated);
+  },
+});
+
+export const inventoryBalance = query({
+  args: { token: v.string() },
+  handler: async (ctx, args) => {
+    const actor = await requireRole(ctx, args.token, ["cooperative"]);
+    const koperasi = await ctx.db.query("koperasiProfiles").withIndex("by_admin", (q) => q.eq("adminId", actor._id)).first();
+    if (!koperasi) throw new Error("Profil koperasi belum tersedia.");
+
+    const [deposits, pools] = await Promise.all([
+      ctx.db.query("deposits").withIndex("by_koperasi", (q) => q.eq("koperasiId", koperasi._id)).collect(),
+      ctx.db.query("supplyPools").withIndex("by_koperasi", (q) => q.eq("koperasiId", koperasi._id)).collect(),
+    ]);
+    const balances = new Map<string, { commodityName: string; inboundKg: number; outboundKg: number; qualityTotal: number; qualityCount: number; qualityGrade: "A" | "B" | "C" | "D" | null }>();
+
+    for (const deposit of deposits) {
+      if (deposit.status === "rejected") continue;
+      const commodity = await ctx.db.get(deposit.commodityId);
+      if (!commodity) continue;
+      const current = balances.get(deposit.commodityId) ?? { commodityName: commodity.name, inboundKg: 0, outboundKg: 0, qualityTotal: 0, qualityCount: 0, qualityGrade: null };
+      current.inboundKg += deposit.weightKg;
+      if (typeof deposit.qualityScore === "number") {
+        current.qualityTotal += deposit.qualityScore;
+        current.qualityCount += 1;
+      }
+      current.qualityGrade = betterGrade(current.qualityGrade, deposit.qualityGrade ?? legacyQualityGrade(deposit.qualityScore));
+      balances.set(deposit.commodityId, current);
+    }
+
+    for (const pool of pools) {
+      if (pool.status !== "allocated") continue;
+      const contract = await ctx.db.get(pool.contractId);
+      if (!contract) continue;
+      const commodity = await ctx.db.get(contract.commodityId);
+      if (!commodity) continue;
+      const current = balances.get(contract.commodityId) ?? { commodityName: commodity.name, inboundKg: 0, outboundKg: 0, qualityTotal: 0, qualityCount: 0, qualityGrade: null };
+      current.outboundKg += pool.allocatedWeightKg;
+      balances.set(contract.commodityId, current);
+    }
+
+    return Array.from(balances.entries()).map(([commodityId, balance]) => ({
+      commodityId,
+      commodityName: balance.commodityName,
+      inboundKg: balance.inboundKg,
+      outboundKg: balance.outboundKg,
+      balanceKg: Math.max(balance.inboundKg - balance.outboundKg, 0),
+      averageQualityScore: balance.qualityCount > 0 ? Math.round(balance.qualityTotal / balance.qualityCount) : null,
+      qualityGrade: balance.qualityGrade,
+    })).sort((a, b) => b.balanceKg - a.balanceKg);
   },
 });

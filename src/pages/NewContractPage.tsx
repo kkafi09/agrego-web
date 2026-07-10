@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { useMutation, useQuery } from 'convex/react'
+import toast from 'react-hot-toast'
 import { api } from '../../convex/_generated/api'
 import type { Page } from '../config/navigation'
 import { rolePermissions } from '../config/role-navigation'
 import type { AuthUser } from '../lib/auth'
+import { getAuthToken } from '../lib/auth'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
@@ -22,13 +24,9 @@ import {
 } from './shared'
 
 export function NewContractPage({ goToPage, user }: { goToPage: (page: Page) => void; user: AuthUser | null }) {
-  const defaultKoperasi = useQuery(api.koperasi.getDefaultKoperasi)
-  const koperasiId = defaultKoperasi?._id
-  const buyers = useQuery(api.auth.listBuyers, { searchTerm: '' })
   const commodities = useQuery(api.masterData.searchCommodities, { searchTerm: '' })
   const createContract = useMutation(api.contracts.createContract)
   const [form, setForm] = useState<ContractFormState>({
-    buyerId: '',
     commodityId: '',
     targetKg: '',
     minimumQuality: '',
@@ -38,9 +36,13 @@ export function NewContractPage({ goToPage, user }: { goToPage: (page: Page) => 
     notes: '',
   })
   const [errors, setErrors] = useState<ContractFormErrors>({})
-  const [saved, setSaved] = useState(false)
-  const canSubmit = Boolean(koperasiId && buyers?.length && commodities?.length)
+  const [, setSaved] = useState(false)
+  const canSubmit = Boolean(commodities?.length)
   const canManageCommodities = user ? rolePermissions[user.role].includes('commodities') : false
+
+  if (user?.role !== 'Buyer') {
+    return <p className="rounded-2xl border border-slate-200 bg-white p-5 text-sm font-bold text-rose-700">Hanya Buyer yang dapat membuat kontrak.</p>
+  }
 
   function updateField(field: keyof ContractFormState, value: string) {
     setSaved(false)
@@ -72,26 +74,29 @@ export function NewContractPage({ goToPage, user }: { goToPage: (page: Page) => 
             event.preventDefault()
             const nextErrors = validateContractForm(form)
             setErrors(nextErrors)
-            if (Object.keys(nextErrors).length > 0 || !koperasiId) {
+            if (Object.keys(nextErrors).length > 0) {
               setSaved(false)
               return
             }
 
-            await createContract({
-              buyerId: form.buyerId as any,
-              koperasiId,
-              commodityId: form.commodityId as any,
-              contractNumber: `AGR-${Date.now()}`,
-              title: form.title.trim() || undefined,
-              targetVolumeKg: Number(form.targetKg),
-              minimumQualityScore: Number(form.minimumQuality),
-              pricePerKg: Number(form.pricePerKg),
-              deadlineAt: new Date(form.deadline).getTime(),
-              notes: form.notes.trim() || undefined,
-            })
-            setSaved(true)
-            setForm({
-              buyerId: '',
+            try {
+              await createContract({
+                token: getAuthToken(),
+                commodityId: form.commodityId as any,
+                contractNumber: `AGR-${Date.now()}`,
+                title: form.title.trim() || undefined,
+                targetVolumeKg: Number(form.targetKg),
+                minimumQualityGrade: form.minimumQuality as 'A' | 'B' | 'C' | 'D',
+                pricePerKg: Number(form.pricePerKg),
+                deadlineAt: new Date(form.deadline).getTime(),
+                notes: form.notes.trim() || undefined,
+              })
+              toast.success('Kontrak berhasil dibuat.')
+              goToPage('contracts')
+            } catch (err) {
+              toast.error((err as Error).message || 'Gagal membuat kontrak.')
+            }
+              setForm({
               commodityId: '',
               targetKg: '',
               minimumQuality: '',
@@ -100,28 +105,14 @@ export function NewContractPage({ goToPage, user }: { goToPage: (page: Page) => 
               title: '',
               notes: '',
             })
+              setSaved(false)
           }}
         >
           <div className="grid gap-1 [&_h2]:text-lg [&_h2]:font-black [&_h2]:text-slate-950">
             <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-700">Kontrak Baru</p>
             <h2>Spesifikasi pembelian</h2>
           </div>
-          {!canSubmit ? <p className="text-sm font-bold text-emerald-700">Tambahkan profil koperasi, buyer, dan komoditas sebelum membuat kontrak.</p> : null}
-          <label className="grid gap-2">
-            <Label>Buyer</Label>
-            <Select value={form.buyerId} onValueChange={(value) => updateField('buyerId', value)} disabled={!buyers?.length}>
-              <SelectTrigger className="w-full" aria-invalid={Boolean(errors.buyerId)}>
-                <SelectValue placeholder={buyers?.length ? 'Pilih buyer' : 'Belum ada buyer'} />
-              </SelectTrigger>
-              <SelectContent position="popper">
-                {buyers?.map((buyer) => (
-                  <SelectItem key={buyer.id} value={buyer.id}>{buyer.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {!buyers?.length ? <p className="text-xs font-semibold text-slate-500">Belum ada buyer terdaftar. Hubungi admin untuk menambahkan buyer.</p> : null}
-            {errors.buyerId ? <small className="text-xs font-semibold text-rose-600">{errors.buyerId}</small> : null}
-          </label>
+          {!canSubmit ? <p className="text-sm font-bold text-emerald-700">Tambahkan komoditas sebelum membuat kontrak.</p> : null}
           <label className="grid gap-2">
             <Label>Komoditas</Label>
             <Select value={form.commodityId} onValueChange={(value) => updateField('commodityId', value)} disabled={!commodities?.length}>
@@ -153,8 +144,13 @@ export function NewContractPage({ goToPage, user }: { goToPage: (page: Page) => 
               {errors.targetKg ? <small className="text-xs font-semibold text-rose-600">{errors.targetKg}</small> : null}
             </label>
             <label>
-              <span>Quality Minimum</span>
-              <Input className="h-11 rounded-lg bg-white text-sm font-semibold text-slate-800" aria-invalid={Boolean(errors.minimumQuality)} max="100" min="0" type="number" value={form.minimumQuality} onChange={(event) => updateField('minimumQuality', event.target.value)} />
+              <span>Minimum Grade</span>
+              <Select value={form.minimumQuality} onValueChange={(value) => updateField('minimumQuality', value)}>
+                <SelectTrigger className="w-full" aria-invalid={Boolean(errors.minimumQuality)}><SelectValue placeholder="Pilih grade minimum" /></SelectTrigger>
+                <SelectContent position="popper">
+                  {(['A', 'B', 'C', 'D'] as const).map((grade) => <SelectItem key={grade} value={grade}>Grade {grade}</SelectItem>)}
+                </SelectContent>
+              </Select>
               {errors.minimumQuality ? <small className="text-xs font-semibold text-rose-600">{errors.minimumQuality}</small> : null}
             </label>
           </div>
@@ -178,17 +174,16 @@ export function NewContractPage({ goToPage, user }: { goToPage: (page: Page) => 
             Simpan Kontrak
           </Button>
         </form>
-        <aside className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <aside className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:sticky lg:top-24">
           <div className="grid gap-1 [&_h2]:text-lg [&_h2]:font-black [&_h2]:text-slate-950">
             <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-700">Preview</p>
             <h2>{commodities?.find((commodity) => commodity._id === form.commodityId)?.name || '-'}</h2>
           </div>
           <dl>
-            <div><dt>Buyer</dt><dd>{buyers?.find((buyer) => buyer.id === form.buyerId)?.name || '-'}</dd></div>
+            <div><dt>Jangkauan</dt><dd>Supply pool lintas-koperasi</dd></div>
             <div><dt>Target</dt><dd>{form.targetKg || '0'} kg</dd></div>
-            <div><dt>Minimum QS</dt><dd>{form.minimumQuality || '-'}</dd></div>
+            <div><dt>Minimum Grade</dt><dd>{form.minimumQuality || '-'}</dd></div>
           </dl>
-          {saved ? <p className="text-sm font-bold text-emerald-700">Kontrak tersimpan.</p> : null}
         </aside>
       </section>
     </>

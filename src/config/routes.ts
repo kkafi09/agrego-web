@@ -8,8 +8,6 @@ export const pagePaths: Record<Page, string> = {
   qcDepositDetail: '/quality-check/deposit',
   qcForm: '/quality-check/form',
   qcResultDetail: '/quality-check/result',
-  allocation: '/allocation',
-  allocationStatus: '/allocation/status',
   contracts: '/contracts',
   newContract: '/contracts/new',
   contractDetail: '/contracts/detail',

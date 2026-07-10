@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { requireRole } from "./auth";
 
 export const saveKoperasiProfile = mutation({
   args: {
@@ -62,8 +63,25 @@ export const getDefaultKoperasi = query({
   },
 });
 
+export const getCurrentKoperasi = query({
+  args: { token: v.string() },
+  handler: async (ctx, args) => {
+    const user = await requireRole(ctx, args.token, ["cooperative"]);
+    return await ctx.db.query("koperasiProfiles").withIndex("by_admin", (q) => q.eq("adminId", user._id)).first();
+  },
+});
+
+export const listKoperasiProfiles = query({
+  args: { token: v.string() },
+  handler: async (ctx, args) => {
+    await requireRole(ctx, args.token, ["admin"]);
+    return await ctx.db.query("koperasiProfiles").collect();
+  },
+});
+
 export const saveDefaultKoperasi = mutation({
   args: {
+    token: v.string(),
     adminId: v.id("users"),
     name: v.string(),
     location: v.string(),
@@ -73,6 +91,8 @@ export const saveDefaultKoperasi = mutation({
     leaderName: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    const actor = await requireRole(ctx, args.token, ["cooperative"]);
+    if (actor._id !== args.adminId) throw new Error("Akses profil koperasi ditolak.");
     const admin = await ctx.db.get(args.adminId);
     if (!admin) {
       throw new Error("Admin koperasi tidak ditemukan.");

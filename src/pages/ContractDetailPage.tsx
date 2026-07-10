@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useMutation, useQuery } from 'convex/react'
+import toast from 'react-hot-toast'
 import { api } from '../../convex/_generated/api'
 import {
   Select,
@@ -13,21 +14,29 @@ import {
   formatDate,
   formatKg,
   mapContractStatus,
+  mapLegacyQualityScore,
   progressPercent,
 } from './shared'
+import type { AuthUser } from '../lib/auth'
+import { getAuthToken } from '../lib/auth'
 
-export function ContractDetailPage() {
+export function ContractDetailPage({ user }: { user: AuthUser | null }) {
   const [selectedContractId] = useState(() => sessionStorage.getItem('agrego_selected_contract_id'))
   const contract = useQuery(
     api.contracts.getContractDetail,
-    selectedContractId ? { contractId: selectedContractId as any } : 'skip',
+    selectedContractId ? { token: getAuthToken(), contractId: selectedContractId as any } : 'skip',
   )
   const shares = useQuery(
     api.reports.profitShareHistory,
     selectedContractId ? { contractId: selectedContractId as any } : 'skip',
   )
   const updateContractStatus = useMutation(api.contracts.updateContractStatus)
+  const availableDeposits = useQuery(api.allocations.availableDepositsForContract, selectedContractId && user?.role === 'Koperasi' ? { token: getAuthToken(), contractId: selectedContractId as any } : 'skip')
+  const allocateDeposit = useMutation(api.allocations.allocateDepositToContract)
+  const recalculateContractProgress = useMutation(api.allocations.recalculateContractProgress)
   const [savingStatus, setSavingStatus] = useState(false)
+  const [selectedDepositIds, setSelectedDepositIds] = useState<string[]>([])
+  const [isPooling, setIsPooling] = useState(false)
 
   if (!selectedContractId) {
     return <p className="rounded-2xl border border-slate-200 bg-white p-5 text-sm font-bold text-emerald-700 shadow-sm">Pilih kontrak dari daftar kontrak untuk melihat detail.</p>
@@ -58,6 +67,16 @@ export function ContractDetailPage() {
         </div>
       </header>
 
+      {user?.role === 'Koperasi' ? (
+        <section className="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-5 shadow-sm">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div><p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-700">Supply Pool</p><h2 className="text-lg font-black text-slate-950">Tambahkan setoran lolos QC</h2></div>
+            <button className="rounded-lg bg-emerald-700 px-4 py-2.5 text-sm font-black text-white disabled:opacity-50" disabled={!selectedDepositIds.length || isPooling} type="button" onClick={async () => { setIsPooling(true); try { for (const depositId of selectedDepositIds) { const candidate = availableDeposits?.find((item) => item.depositId === depositId); if (candidate) await allocateDeposit({ token: getAuthToken(), contractId: contract.contractId, depositId: depositId as any, allocatedWeightKg: candidate.availableWeightKg }) } await recalculateContractProgress({ token: getAuthToken(), contractId: contract.contractId }); setSelectedDepositIds([]); toast.success('Setoran berhasil ditambahkan ke supply pool.') } catch (err) { toast.error((err as Error).message || 'Gagal menambahkan setoran ke supply pool.') } finally { setIsPooling(false) } }}>Tambah ke Pool</button>
+          </div>
+          <div className="mt-4 grid gap-3">{availableDeposits?.length ? availableDeposits.map((deposit) => <label key={deposit.depositId} className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white p-3 text-sm"><span><input className="mr-3" type="checkbox" checked={selectedDepositIds.includes(deposit.depositId)} onChange={() => setSelectedDepositIds((current) => current.includes(deposit.depositId) ? current.filter((id) => id !== deposit.depositId) : [...current, deposit.depositId])} />{deposit.depositNumber} / {deposit.memberName}</span><strong>Grade {deposit.qualityGrade}</strong></label>) : <p className="text-sm font-semibold text-slate-600">Belum ada setoran yang sesuai dengan kontrak.</p>}</div>
+        </section>
+      ) : null}
+
       <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between [&_h2]:text-lg [&_h2]:font-black [&_h2]:text-slate-950 [&>span]:text-sm [&>span]:font-bold [&>span]:text-slate-500">
           <div>
@@ -70,7 +89,7 @@ export function ContractDetailPage() {
           <dl className="grid gap-3 sm:grid-cols-3">
             <div><dt className="text-xs font-semibold text-slate-500">Komoditas</dt><dd className="mt-1 text-sm font-black text-slate-950">{contract.commodityName}</dd></div>
             <div><dt className="text-xs font-semibold text-slate-500">Target</dt><dd className="mt-1 text-sm font-black text-slate-950">{formatKg(contract.targetVolumeKg)}</dd></div>
-            <div><dt className="text-xs font-semibold text-slate-500">Minimum QS</dt><dd className="mt-1 text-sm font-black text-slate-950">{contract.minimumQualityScore}</dd></div>
+            <div><dt className="text-xs font-semibold text-slate-500">Minimum Grade</dt><dd className="mt-1 text-sm font-black text-slate-950">{contract.minimumQualityGrade}</dd></div>
           </dl>
           <div className="grid gap-2">
             <div className="flex items-center justify-between gap-3 text-sm">
@@ -100,10 +119,16 @@ export function ContractDetailPage() {
               value={contract.status}
               onValueChange={async (value) => {
                 setSavingStatus(true)
-                await updateContractStatus({
-                  contractId: contract.contractId,
-                  status: value as ContractStatus,
-                })
+                try {
+                  await updateContractStatus({
+                    token: getAuthToken(),
+                    contractId: contract.contractId,
+                    status: value as ContractStatus,
+                  })
+                  toast.success('Status kontrak berhasil diperbarui.')
+                } catch (err) {
+                  toast.error((err as Error).message || 'Gagal memperbarui status kontrak.')
+                }
                 setSavingStatus(false)
               }}
             >
@@ -144,7 +169,7 @@ export function ContractDetailPage() {
               <span className="font-mono text-xs font-black text-emerald-700">{allocation.depositNumber ?? '-'}</span>
               <span>{allocation.memberName ?? '-'}</span>
               <span>{formatKg(allocation.allocatedWeightKg)}</span>
-              <strong>{allocation.qualityScore}</strong>
+              <strong>{allocation.qualityGrade ?? '-'}</strong>
               <span>{formatDate(allocation.allocatedAt)}</span>
             </article>
           ))}
@@ -166,7 +191,7 @@ export function ContractDetailPage() {
             <article className="grid gap-3 rounded-xl border border-slate-200 bg-white p-4 sm:grid-cols-[1fr_1fr_auto_auto] sm:items-center" key={share.shareId}>
               <div><strong>{share.memberName}</strong><span>{formatDate(share.calculatedAt)}</span></div>
               <div><span>{formatKg(share.contributedWeightKg)}</span><b>Rp{share.amountEarned.toLocaleString('id-ID')}</b></div>
-              <span className="inline-flex w-fit items-center rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-black text-emerald-700">QS {share.qualityScore}</span>
+              <span className="inline-flex w-fit items-center rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-black text-emerald-700">Grade QS {mapLegacyQualityScore(share.qualityScore)}</span>
               <small>{share.contractNumber ?? '-'}</small>
             </article>
           ))}

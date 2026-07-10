@@ -3,7 +3,7 @@ interface StockSummary {
   commodityName: string
   totalKg: number
   readyKg: number
-  averageQualityScore: number | null
+  qualityGrade: string | null
 }
 
 interface CommodityStockListProps {
@@ -35,12 +35,9 @@ export default function CommodityStockList({ stocks }: CommodityStockListProps) 
           <div className="grid gap-2 sm:min-w-48">
             <div className="flex items-center justify-between gap-3">
               <span className="text-sm font-black text-slate-950">{formatKg(stock.totalKg)}</span>
-              <span className="rounded-full bg-emerald-50 px-2 py-1 text-xs font-black text-emerald-700">QS {stock.averageQualityScore ?? '-'}</span>
+              <span className="rounded-full bg-emerald-50 px-2 py-1 text-xs font-black text-emerald-700">Grade QS {stock.qualityGrade ?? '-'}</span>
             </div>
             
-            <div className="h-2 overflow-hidden rounded-full bg-slate-100" aria-label={`Quality score ${stock.averageQualityScore ?? 0}%`}>
-              <div className="h-full rounded-full bg-emerald-600" style={{ width: `${stock.averageQualityScore ?? 0}%` }} />
-            </div>
           </div>
         </article>
       ))}
