@@ -1,152 +1,254 @@
-# Agrego Web
+# AGREGO — Grow Together. Deliver Bigger. Starts Here.
 
-Agrego Web adalah aplikasi frontend PWA (Progressive Web App) untuk platform koperasi digital **Agrego**. Aplikasi ini dibangun dengan performa tinggi menggunakan React 19, TypeScript, Vite 8, dan Tailwind CSS v4, didukung oleh Convex sebagai backend real-time dan database.
+<div align="center">
 
----
+![Agrego](https://img.shields.io/badge/Agrego%20Web-v0.1.0-0066FF?style=for-the-badge&labelColor=0a0a2e)
+[![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&labelColor=0a0a2e)](https://react.dev)
+[![TypeScript](https://img.shields.io/badge/TypeScript-6.0-3178C6?style=for-the-badge&logo=typescript&labelColor=0a0a2e)](https://www.typescriptlang.org)
+[![Vite](https://img.shields.io/badge/Vite-8-646CFF?style=for-the-badge&logo=vite&labelColor=0a0a2e)](https://vitejs.dev)
+[![Convex](https://img.shields.io/badge/Convex-Realtime-FF6F00?style=for-the-badge&labelColor=0a0a2e)](https://convex.dev)
+[![PWA](https://img.shields.io/badge/PWA-Installable-5A0FC8?style=for-the-badge&labelColor=0a0a2e)](https://web.dev/progressive-web-apps/)
 
-## 🛠️ Arsitektur Teknologi (Tech Stack)
+<strong>B2B Fractional Supply Aggregator Berbasis Gotong Royong.</strong><br> 
+Mengubah Ribuan Supply Kecil Menjadi Kapasitas Pasok Industri Melalui Koperasi Desa.
 
-Aplikasi ini menggunakan kombinasi teknologi modern untuk memastikan performa maksimal, kemudahan pemeliharaan, serta pengalaman pengguna yang responsif:
+**[Live Demo](https://agrego-web.kafi-dev27.workers.dev/login)**
 
-### 1. Frontend Core & Bundler
-
-- **React 19**: Versi React terbaru dengan fitur optimal seperti automatic JSX runtime dan integrasi **React Compiler** (`babel-plugin-react-compiler`) untuk optimasi rendering otomatis secara out-of-the-box.
-- **TypeScript**: Skrip yang diketik dengan aman (typed) dengan resolusi modul modern (`tsconfig.json` & `tsconfig.app.json`).
-- **Vite 8**: _Build tool_ generasi baru yang sangat cepat untuk _HMR (Hot Module Replacement)_ saat pengembangan dan optimasi bundel produksi.
-
-### 2. State & Data Layer (Backend)
-
-- **Convex**: Layanan _backend-as-a-service_ real-time. Berfungsi untuk mendefinisikan skema basis data (`convex/schema.ts`), mengelola fungsi query/mutation, serta menghasilkan tipe data TypeScript otomatis untuk klien frontend (`convex/_generated/`).
-
-### 3. Antarmuka & Styling (UI/UX)
-
-- **Tailwind CSS v4**: Menggunakan integrasi `@tailwindcss/vite` untuk pemrosesan CSS secepat kilat dengan fitur-fitur CSS modern terkini.
-- **Radix UI**: Primitif komponen UI tanpa gaya (headless) untuk membangun antarmuka yang aksesibel dan interaktif.
-- **Lucide React**: Set ikon SVG rancangan modern.
-- **React Hot Toast**: Notifikasi toast dinamis yang ringan dan menarik.
-
-### 4. Routing & Form Management
-
-- **React Router DOM v7**: Manajemen navigasi halaman, pencocokan rute, dan proteksi berbasis peran (role-based auth).
-- **React Hook Form & Zod**: Penanganan formulir yang efisien dengan skema validasi tipe data yang aman (type-safe validation).
-
-### 5. PWA (Progressive Web App)
-
-- **Vite PWA Plugin**: Dikonfigurasi dalam `vite.config.ts` agar aplikasi dapat dipasang (_installable_), memiliki _service worker_ untuk caching offline, dan mendukung pembaruan aplikasi secara mulus.
-
-### 6. Linting & Tooling
-
-- **Bun**: Sebagai _runtime_ JavaScript/TypeScript, _package manager_ yang cepat, dan pengeksekusi script.
-- **Oxlint**: Alat linter modern dari ekosistem Oxc yang ditulis dalam Rust, memberikan analisis kode super cepat untuk mendeteksi error dengan efisien.
+</div>
 
 ---
 
-## 📂 Struktur Direktori Utama
+## 🎯 Why AGREGO?
+<img src="public/brand/agrego-primary-logo.svg" alt="AGREGO Logo" width="480"><br> 
+Koperasi Indonesia menghadapi tantangan serius: **lebih dari 83.000 koperasi aktif** dengan administrasi yang masih manual — pencatatan simpanan via buku tulis, kontrak disimpan di lemari, dan QC yang mengandalkan ingkatan. Pengurus kewalahan, anggota menunggu kepastian status simpanan dan pinjaman mereka, dan pelaporan ke Dinas terlambat berbulan-bulan.
 
-- `convex/`: Berisi skema basis data, logika query, dan mutation Convex backend.
-- `src/`: Kode sumber utama aplikasi.
-  - `src/components/`: Komponen UI modular (layout, dashboard, forms, display data).
-  - `src/config/`: Konfigurasi navigasi, penentuan hak akses peran (role-based), dan pemetaan rute.
-  - `src/lib/`: Fungsi utilitas, logika otentikasi local storage, dsb.
-  - `src/pages/`: Halaman-halaman utama aplikasi (Dashboard, QC, Deposit, Kontrak, Profil, dll).
-  - `src/styles/`: Berisi penyesuaian gaya CSS.
-  - `src/App.tsx`: Gerbang masuk aplikasi utama yang mengurus inisialisasi state otentikasi dan struktur routing.
-  - `src/main.tsx`: Entrypoint inisialisasi React ke DOM.
+**AGREGO menjawab ini dengan:**
+
+| Problem | Impact | AGREGO Solution |
+|---|---|---|
+| Manual bookkeeping via Excel/WhatsApp | Data silos, prone to errors | **Real-time Convex database** with auto-generated TypeScript types |
+| Slow QC review for deposits & contracts | Members wait days for status | **Dedicated QC module** with reactive approval flow |
+| Role confusion (admin, QC, member) | Wrong permissions, security risk | **Role-based routing** with centralized config and guard |
+| Web-only access for field officers | Can't check data offline/on mobile | **PWA** — installable, offline-capable, mobile-first |
+| Vendor lock-in on cloud providers | High cost, limited flexibility | **Cloudflare Workers** deploy — edge-first, near-zero cost at scale |
 
 ---
 
-## 🚀 Cara Menjalankan Aplikasi
+## ✨ Key Features
 
-Ikuti langkah-langkah di bawah ini untuk menjalankan aplikasi Agrego Web di lingkungan pengembangan lokal Anda.
+### 🏛️ Cooperative Operations
+- **Dashboard** — role-specific KPIs (admin, QC officer, member)
+- **Simpanan (Deposits)** — create deposits, deposit history, deposit reports
+- **QC Module** — QC form, history, deposit detail, result detail for quality control
+- **Kontrak (Contracts)** — list, detail, and create new contracts with members
+- **Anggota (Members)** — member directory and profile management
+- **Komoditas (Commodities)** — commodity catalog for contract pricing
+- **SHU (Profit Shares)** — profit share calculation and distribution
+- **Profil Koperasi & User** — cooperative profile and personal account settings
+- **Auth flow** — login, register, reset password pages
 
-### 📋 Prasyarat
+### 🔐 Role-Based Access Control
+- **Centralized permission config** — `src/config/roles.ts` defines what each role can access
+- **Route mapping** — declarative route → role mapping in `src/config/routes.ts`
+- **Navigation config** — sidebar/menu items auto-filtered by role
+- **Local storage auth** — lightweight client-side session for MVP (see Architecture note for production path)
 
-Pastikan Anda sudah menginstal **Bun** di komputer Anda. Jika belum, Anda dapat menginstalnya dengan perintah berikut (atau merujuk ke [situs resmi Bun](https://bun.sh)):
+### ⚡ Real-Time Data with Convex
+- **Reactive queries** — UI updates instantly when backend data changes, no manual refetch
+- **Type-safe schema** — `convex/schema.ts` generates TypeScript types end-to-end
+- **Mutations + Queries** — clean separation, optimistic updates out of the box
+- **Zero backend boilerplate** — no REST/GraphQL layer to maintain
+
+### 📱 Progressive Web App
+- **Installable** — add to home screen on iOS/Android/desktop
+- **Service Worker** — offline caching via `vite-plugin-pwa`
+- **Mobile-first** — responsive layouts optimized for field officers
+- **Fast load** — Vite 8 + React 19 Compiler for minimal JS shipped
+
+### 🎨 Modern UI Stack
+- **Tailwind CSS v4** — utility-first styling via `@tailwindcss/vite`
+- **Radix UI** — accessible headless primitives (label, radio-group, slot)
+- **Lucide React** — consistent SVG icon set
+- **React Hot Toast** — non-blocking notifications
+- **React Hook Form + Zod** — type-safe form validation
+- **class-variance-authority + tailwind-merge + clsx** — typed component variants
+
+---
+
+## ⚙️ How It Works
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                  AGREGO WEB WORKFLOW                        │
+└─────────────────────────────────────────────────────────────┘
+
+  [1] AUTH                [2] ROLE ROUTE            [3] DASHBOARD
+  ┌──────────────┐        ┌──────────────┐          ┌──────────────────────┐
+  │ Login /       │        │ Role Config  │          │  Role-specific KPIs  │
+  │ Register      │───────▶│ Route Guard  │─────────▶│  Simpanan · QC       │
+  └──────────────┘        └──────────────┘          │  Kontrak · SHU       │
+                                                     └──────────────────────┘
+                                                              │
+                                                              ▼
+  [6] EXPORT / SYNC    [5] QC REVIEW         [4] TRANSACTION
+  ┌──────────────┐      ┌──────────────┐       ┌──────────────────────┐
+  │ PDF / Print  │◀─────│ Approve /    │◀──────│ Deposits · Contracts │
+  │ Cloud Sync   │      │ Reject / Edit│       │ Members · Commodities│
+  └──────────────┘      └──────────────┘       └──────────────────────┘
+```
+
+---
+
+## 🏗️ Architecture
+
+```
+                         ┌──────────────────────────────────┐
+                         │         CLIENT LAYER             │
+                         │  React 19 + TypeScript + Vite 8 │
+                         │  React Compiler · Tailwind v4   │
+                         │  Radix UI · Lucide · RHF + Zod  │
+                         └──────────────┬───────────────────┘
+                                        │
+          ┌──────────────────────────────┼──────────────────────────────┐
+          │                              │                              │
+          ▼                              ▼                              ▼
+┌──────────────────┐       ┌─────────────────────┐       ┌──────────────────┐
+│  Auth & Routing  │       │  Role-Based Access  │       │  Forms & Validation│
+│  React Router 7  │       │  src/config/roles   │       │  React Hook Form │
+│  Local Storage   │       │  src/config/routes  │       │  Zod schemas     │
+└────────┬─────────┘       └──────────┬──────────┘       └────────┬─────────┘
+         │                              │                              │
+         └──────────────────────────────┼──────────────────────────────┘
+                                        │
+                         ┌──────────────▼───────────────────┐
+                         │       CONVEX BACKEND              │
+                         │  Real-time Reactive Database     │
+                         │  ├── Schema (convex/schema.ts)  │
+                         │  ├── Queries (convex/*.ts)       │
+                         │  ├── Mutations (convex/*.ts)     │
+                         │  └── Auto-generated TS types     │
+                         └───────��──────┬───────────────────┘
+                                        │
+                         ┌──────────────▼───────────────────┐
+                         │       DEPLOYMENT LAYER            │
+                         │  Cloudflare Workers (Edge)       │
+                         │  ├── Workers Assets (dist/)       │
+                         │  ├── SPA fallback → index.html  │
+                         │  └── Global edge network         │
+                         └──────────────────────────────────┘
+```
+
+### Data Flow
+```
+User Action → React Hook Form + Zod validation
+    │
+    ├── Convex mutation ──▶ Real-time DB ──▶ All subscribers update instantly
+    ├── Convex query    ──▶ Reactive read ──▶ UI re-renders on data change
+    └── Role guard      ──▶ Permission check ──▶ Allow / redirect / 403
+
+PWA Service Worker caches:
+    ├── App shell (HTML, CSS, JS)
+    ├── Static assets (icons, fonts)
+    └── Last-known data for offline read
+```
+
+---
+
+## 🛠️ Tech Stack
+
+| Layer | Technology | Purpose |
+|---|---|---|
+| **Frontend Framework** | React 19 + Vite 8 | Fast SPA with HMR, minimal JS via React Compiler |
+| **Language** | TypeScript 6.0 | End-to-end type safety with Convex generated types |
+| **Backend / Database** | Convex | Real-time reactive backend-as-a-service |
+| **Styling** | Tailwind CSS v4 | Utility-first CSS via `@tailwindcss/vite` |
+| **UI Primitives** | Radix UI | Accessible headless components |
+| **Icons** | Lucide React | Consistent SVG iconography |
+| **Routing** | React Router DOM v7 | Role-based client-side routing |
+| **Forms** | React Hook Form + Zod | Performant, type-safe form validation |
+| **Notifications** | React Hot Toast | Non-blocking user feedback |
+| **Component Utils** | CVA + clsx + tailwind-merge | Typed variants, class composition |
+| **PWA** | vite-plugin-pwa | Service worker, offline cache, install prompt |
+| **Linter** | Oxlint | Rust-based, near-instant linting |
+| **Runtime / PM** | Bun | Fast install + script runner |
+| **Deployment** | Cloudflare Workers | Edge hosting via Wrangler |
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- **Bun** 1.x — [Install here](https://bun.sh) (or Node.js 18+ as fallback)
+- **Convex account** — [Sign up free](https://convex.dev)
+- Modern browser (Chrome 110+, Edge 110+, Safari 16.4+)
+
+### Clone & Install
 
 ```bash
-powershell -Command "iwr https://bun.sh/install.ps1 | iex"
+# Clone the repository
+git clone https://github.com/kkafi09/agrego-web.git
+cd agrego-web
+
+# Install dependencies (using Bun — recommended)
+bun install
 ```
 
-### 🏃 Langkah Pengembangan Lokal
+### Environment Setup
 
-1.  **Clone Repositori dan Masuk ke Direktori Project**
+Create a `.env.local` file in the project root:
 
-    ```bash
-    git clone <repository_url>
-    cd agrego-web
-    ```
-
-2.  **Instal Dependensi**
-    Gunakan Bun untuk proses instalasi yang cepat:
-
-    ```bash
-    bun install
-    ```
-
-3.  **Konfigurasi Environment Variables**
-    Buat file `.env.local` di direktori root proyek dan isi dengan credential deployment Convex Anda (contoh):
-
-    ```env
-    CONVEX_DEPLOYMENT=dev:warmhearted-fennec-411
-    VITE_CONVEX_URL=https://warmhearted-fennec-411.convex.cloud
-    VITE_CONVEX_SITE_URL=https://warmhearted-fennec-411.convex.site
-    ```
-
-4.  **Jalankan Backend Convex**
-    Buka terminal baru dan jalankan layanan dev Convex. Ini akan memantau skema, menyinkronkan fungsi cloud, dan memperbarui definisi tipe data klien secara otomatis:
-
-    ```bash
-    bun run dev:convex
-    ```
-
-5.  **Jalankan Server Development Frontend**
-    Di terminal utama Anda, jalankan server pengembangan Vite:
-    ```bash
-    bun run dev
-    ```
-    Aplikasi akan berjalan dan dapat diakses di browser pada alamat [http://localhost:5173](http://localhost:5173).
-
----
-
-## 📦 Script Perintah yang Tersedia
-
-Berikut adalah perintah-perintah yang dapat dijalankan menggunakan Bun:
-
-- `bun run dev`: Menjalankan server pengembangan Vite secara lokal.
-- `bun run dev:convex`: Menjalankan client sinkronisasi backend Convex dev.
-- `bun run build`: Memeriksa tipe data dengan TypeScript compiler (`tsc`) dan membangun bundel produksi teroptimasi ke direktori `dist/`.
-- `bun run preview`: Menjalankan server lokal untuk melihat hasil build produksi di `dist/`.
-- `bun run lint`: Menjalankan linter **Oxlint** untuk mendeteksi kesalahan sintaks dan masalah kualitas kode dengan cepat.
-- `bun run deploy`: Membangun bundel produksi (`dist/`) dan mendeploy aplikasi ke Cloudflare Workers (dengan fitur Assets) secara langsung menggunakan Wrangler.
-
----
-
-## 🌐 Deployment ke Cloudflare Workers (dengan Assets)
-
-Aplikasi ini siap dideploy ke **Cloudflare Workers** menggunakan fitur **Workers Assets** yang memungkinkan hosting aset statis di jaringan edge Cloudflare.
-
-### Konfigurasi Cloudflare Workers (`wrangler.toml`)
-Konfigurasi didefinisikan pada file `wrangler.toml` di direktori root:
-```toml
-name = "agrego-web"
-compatibility_date = "2024-11-01"
-
-[assets]
-directory = "./dist"
-not_found_handling = "single-page-application"
+```bash
+# .env.local
+CONVEX_DEPLOYMENT=your_convex_deployment_name
+VITE_CONVEX_URL=https://your-deployment.convex.cloud
+VITE_CONVEX_SITE_URL=https://your-deployment.convex.site
 ```
-*   `directory = "./dist"`: Direktori hasil build produksi.
-*   `not_found_handling = "single-page-application"`: Mengatur agar semua rute yang tidak ditemukan langsung dialihkan ke `/index.html` dengan status `200 OK` (sangat penting untuk routing SPA seperti React Router DOM agar tidak mengembalikan 404).
 
-### Cara Mendeploy Langsung via CLI (Wrangler)
-1.  Jalankan perintah deploy menggunakan Bun:
-    ```bash
-    bun run deploy
-    ```
-2.  Jika ini adalah pertama kalinya Anda menggunakan Wrangler di komputer Anda, Anda akan diminta untuk masuk (login) ke akun Cloudflare melalui browser.
-3.  Wrangler akan otomatis mendeploy aplikasi sebagai Worker statis.
+> ⚠️ **Security Note:** Never commit your `.env.local` file. The `VITE_CONVEX_*` vars are exposed to the client by design (Vite prefix) — this is acceptable for Convex because access is governed by Convex's built-in auth functions, not by hiding the URL. Restrict data access in `convex/auth.config.ts` and per-function `ctx.auth` checks. For production, replace the local-storage auth helper in `src/lib/` with a proper Convex auth provider.
 
-### Catatan Penting (Environment Variables)
-Pastikan Anda menambahkan environment variables untuk backend Convex pada panel dashboard Cloudflare Workers Anda di bagian **Settings -> Variables -> Environment Variables**:
-*   `VITE_CONVEX_URL`: URL API Convex Anda (misalnya `https://xxx.convex.cloud`).
-*   `VITE_CONVEX_SITE_URL`: URL site/HTTP actions Convex Anda (misalnya `https://xxx.convex.site`).
+### Run Development Server
+
+```bash
+# Terminal 1 — Convex backend sync (watch mode)
+bun run dev:convex
+
+# Terminal 2 — Vite dev server
+bun run dev
+```
+
+The app will be available at `http://localhost:5173`
+
+### Build for Production
+
+```bash
+# Type-check + build to dist/
+bun run build
+
+# Preview production build locally
+bun run preview
+
+# Lint
+bun run lint
+
+# Build + deploy to Cloudflare Workers
+bun run deploy
+```
+
+### Cloudflare Workers Deploy (Optional)
+
+```bash
+# First-time setup
+npx wrangler login
+
+# Deploy
+bun run deploy
+```
+
+`wrangler.toml` is preconfigured with:
+- `directory = "./dist"`
+- `not_found_handling = "single-page-application"` (routes unmatched paths to `index.html` with 200 OK — required for React Router)
+
+Set `VITE_CONVEX_URL` and `VITE_CONVEX_SITE_URL` in the Cloudflare dashboard (Settings → Variables) before deploying.
+
+---
