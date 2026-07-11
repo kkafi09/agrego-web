@@ -62,16 +62,6 @@ export default defineSchema({
     name: v.string(),
     unit: v.string(),
     qualityParameters: v.array(v.string()),
-    qualityRules: v.optional(
-      v.array(
-        v.object({
-          name: v.string(),
-          minimum: v.optional(v.number()),
-          maximum: v.optional(v.number()),
-          weight: v.number(),
-        }),
-      ),
-    ),
     minimumQualityScore: v.number(),
     status: v.optional(v.union(v.literal("active"), v.literal("inactive"))),
     createdAt: v.number(),

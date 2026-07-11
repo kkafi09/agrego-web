@@ -74,13 +74,6 @@ export const deleteMember = mutation({
   },
 });
 
-const qualityRuleValidator = v.object({
-  name: v.string(),
-  minimum: v.optional(v.number()),
-  maximum: v.optional(v.number()),
-  weight: v.number(),
-});
-
 export function normalizeCommodityKey(name: string) {
   return name.trim().toLocaleLowerCase('id-ID').replace(/\s+/g, ' ');
 }
@@ -91,7 +84,6 @@ export const createCommodity = mutation({
     name: v.string(),
     unit: v.string(),
     qualityParameters: v.array(v.string()),
-    qualityRules: v.optional(v.array(qualityRuleValidator)),
     minimumQualityScore: v.number(),
   },
   handler: async (ctx, args) => {
@@ -110,7 +102,6 @@ export const createCommodity = mutation({
       name: args.name,
       unit: args.unit,
       qualityParameters: args.qualityParameters,
-      qualityRules: args.qualityRules,
       minimumQualityScore: args.minimumQualityScore,
       status: "active",
       createdAt: Date.now(),
@@ -135,7 +126,6 @@ export const updateCommodity = mutation({
     name: v.string(),
     unit: v.string(),
     qualityParameters: v.array(v.string()),
-    qualityRules: v.optional(v.array(qualityRuleValidator)),
     minimumQualityScore: v.number(),
     status: v.optional(v.union(v.literal("active"), v.literal("inactive"))),
   },
@@ -152,7 +142,6 @@ export const updateCommodity = mutation({
       name: args.name,
       unit: args.unit,
       qualityParameters: args.qualityParameters,
-      qualityRules: args.qualityRules,
       minimumQualityScore: args.minimumQualityScore,
       status: args.status,
       updatedAt: Date.now(),
@@ -270,7 +259,6 @@ export const migrateCommoditiesToKoperasi = mutation({
           name: source.name,
           unit: source.unit,
           qualityParameters: source.qualityParameters,
-          qualityRules: source.qualityRules,
           minimumQualityScore: source.minimumQualityScore,
           status: source.status ?? "active",
           createdAt: Date.now(),

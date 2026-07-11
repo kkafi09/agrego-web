@@ -40,6 +40,9 @@ export function NewContractPage({ goToPage, user }: { goToPage: (page: Page) => 
   const canSubmit = Boolean(commodities?.length)
   const canManageCommodities = user ? rolePermissions[user.role].includes('commodities') : false
   const selectedCommodity = commodities?.find((commodity) => commodity._id === form.commodityId)
+  const selectedCommodityProviderCount = selectedCommodity && 'koperasiCount' in selectedCommodity
+    ? selectedCommodity.koperasiCount
+    : undefined
   const targetVolume = Number(form.targetKg) || 0
   const pricePerKg = Number(form.pricePerKg) || 0
   const estimatedValue = targetVolume * pricePerKg
@@ -219,7 +222,7 @@ export function NewContractPage({ goToPage, user }: { goToPage: (page: Page) => 
           <div className="rounded-xl border border-blue-100 bg-blue-50 p-4">
             <p className="text-xs font-bold uppercase tracking-wide text-blue-700">Sumber pasokan</p>
             <strong className="mt-1 block text-sm font-black text-slate-950">
-              {selectedCommodity?.koperasiCount ? `${selectedCommodity.koperasiCount} koperasi aktif` : 'Belum ada koperasi aktif'}
+              {selectedCommodityProviderCount ? `${selectedCommodityProviderCount} koperasi aktif` : 'Belum ada koperasi aktif'}
             </strong>
             <p className="mt-1 text-xs font-semibold leading-relaxed text-slate-600">Supply pool dapat menggabungkan stok lintas koperasi.</p>
           </div>
