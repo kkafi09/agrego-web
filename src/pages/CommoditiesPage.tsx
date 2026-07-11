@@ -1,7 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useQuery, useMutation } from 'convex/react'
 import toast from 'react-hot-toast'
 import { api } from '../../convex/_generated/api'
+import type { AuthUser } from '../lib/auth'
+import { getAuthToken } from '../lib/auth'
 import { Button } from '../components/ui/button'
 import {
   Dialog,
@@ -30,7 +32,7 @@ const emptyCommodityForm: CommodityFormState = {
   qualityParameters: '',
 }
 
-export function CommoditiesPage() {
+export function CommoditiesPage({ user }: { user: AuthUser | null }) {
   const [searchTerm, setSearchTerm] = useState('')
   const [, setSaved] = useState(false)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -38,10 +40,19 @@ export function CommoditiesPage() {
   const [form, setForm] = useState<CommodityFormState>(emptyCommodityForm)
   const [commodityToDelete, setCommodityToDelete] = useState<{ id: string; name: string } | null>(null)
 
-  const commodityList = useQuery(api.masterData.searchCommodities, { searchTerm })
+  const commodityList = useQuery(api.masterData.listCommodityNetwork, { token: getAuthToken(), searchTerm })
   const createCommodity = useMutation(api.masterData.createCommodity)
   const updateCommodity = useMutation(api.masterData.updateCommodity)
   const deleteCommodity = useMutation(api.masterData.deleteCommodity)
+  const updateCommodityStatus = useMutation(api.masterData.updateCommodityStatus)
+  const adoptCommodity = useMutation(api.masterData.adoptCommodity)
+  const migrateCommoditiesToKoperasi = useMutation(api.masterData.migrateCommoditiesToKoperasi)
+
+  useEffect(() => {
+    if (user?.role === 'Admin') {
+      void migrateCommoditiesToKoperasi({ token: getAuthToken() }).catch(() => undefined)
+    }
+  }, [migrateCommoditiesToKoperasi, user?.role])
 
   function updateField(field: keyof CommodityFormState, value: string) {
     setSaved(false)
@@ -78,9 +89,9 @@ export function CommoditiesPage() {
               placeholder="Cari komoditas"
             />
           </label>
-          <Button className="h-11 rounded-lg bg-emerald-700 text-sm font-black text-white hover:bg-emerald-800" type="button" onClick={openCreateDialog}>
+          {user?.role === 'Admin' || user?.role === 'Koperasi' ? <Button className="h-11 rounded-lg bg-emerald-700 text-sm font-black text-white hover:bg-emerald-800" type="button" onClick={openCreateDialog}>
             Tambah Komoditas
-          </Button>
+          </Button> : null}
         </div>
       </section>
 
@@ -90,33 +101,41 @@ export function CommoditiesPage() {
             <thead className="bg-slate-50 text-xs font-black uppercase tracking-wide text-slate-500">
               <tr>
                 <th className="px-4 py-3">Komoditas</th>
+                {user?.role === 'Admin' ? <th className="px-4 py-3">Koperasi</th> : null}
                 <th className="px-4 py-3">Unit</th>
                 <th className="px-4 py-3">Minimum QS</th>
                 <th className="px-4 py-3">Parameter</th>
+                <th className="px-4 py-3">Status</th>
                 <th className="px-4 py-3 text-right">Aksi</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {commodityList === undefined ? (
-                <tr><td colSpan={5} className="px-4 py-10 text-center text-sm font-semibold text-slate-500">Memuat data komoditas...</td></tr>
+                <tr><td colSpan={user?.role === 'Admin' ? 7 : 6} className="px-4 py-10 text-center text-sm font-semibold text-slate-500">Memuat data komoditas...</td></tr>
               ) : commodityList.length === 0 ? (
-                <tr><td colSpan={5} className="px-4 py-10 text-center text-sm font-semibold text-slate-500">Belum ada komoditas terdaftar.</td></tr>
+                <tr><td colSpan={user?.role === 'Admin' ? 7 : 6} className="px-4 py-10 text-center text-sm font-semibold text-slate-500">Belum ada komoditas terdaftar.</td></tr>
               ) : (
                 commodityList.map((commodity) => (
-                  <tr className="transition hover:bg-emerald-50/50" key={commodity._id}>
+                  <tr className="transition hover:bg-emerald-50/50" key={commodity.commodityId}>
                     <td className="px-4 py-3 font-black text-slate-950">{commodity.name}</td>
+                    {user?.role === 'Admin' ? <td className="px-4 py-3 font-semibold text-slate-700">{commodity.ownerName} · {commodity.activeProviderCount} aktif</td> : null}
                     <td className="px-4 py-3 font-semibold text-slate-700">{commodity.unit}</td>
                     <td className="px-4 py-3 font-semibold text-slate-700">{commodity.minimumQualityScore}</td>
                     <td className="px-4 py-3 font-semibold text-slate-700">{commodity.qualityParameters.join(', ') || '-'}</td>
                     <td className="px-4 py-3">
+                      <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-black ${commodity.status === 'active' ? 'bg-emerald-50 text-emerald-700' : commodity.status === 'not_added' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-500'}`}>
+                        {commodity.status === 'active' ? 'Aktif' : commodity.status === 'not_added' ? 'Belum ditambahkan' : 'Nonaktif'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
                       <div className="flex justify-end gap-2">
-                        <Button
+                        {user?.role === 'Admin' ? <><Button
                           variant="outline"
                           size="sm"
                           type="button"
                           onClick={() => {
                             setForm({
-                              _id: commodity._id,
+                               _id: commodity.commodityId,
                               name: commodity.name,
                               unit: commodity.unit,
                               minimumQualityScore: String(commodity.minimumQualityScore),
@@ -133,10 +152,42 @@ export function CommoditiesPage() {
                           size="sm"
                           type="button"
                           className="text-rose-700 hover:bg-rose-50 hover:text-rose-800"
-                          onClick={() => setCommodityToDelete({ id: commodity._id, name: commodity.name })}
+                           onClick={() => setCommodityToDelete({ id: commodity.commodityId, name: commodity.name })}
                         >
                           Hapus
                         </Button>
+                        </> : user?.role === 'Koperasi' ? <>
+                        {commodity.canEdit ? <Button
+                          variant="outline"
+                          size="sm"
+                          type="button"
+                          onClick={() => {
+                            setForm({ _id: commodity.commodityId, name: commodity.name, unit: commodity.unit, minimumQualityScore: String(commodity.minimumQualityScore), qualityParameters: commodity.qualityParameters.join(', ') })
+                            setSaved(false)
+                            setIsDialogOpen(true)
+                          }}
+                        >Edit</Button> : null}
+                        <Button
+                          variant={commodity.status === 'active' ? 'outline' : 'default'}
+                          size="sm"
+                          type="button"
+                          className={commodity.status === 'active' ? 'text-rose-700 hover:text-rose-800' : 'bg-emerald-700 text-white hover:bg-emerald-800'}
+                          onClick={async () => {
+                            try {
+                              if (commodity.status === 'not_added') {
+                                await adoptCommodity({ token: getAuthToken(), commodityId: commodity.commodityId })
+                              } else {
+                                await updateCommodityStatus({ token: getAuthToken(), commodityId: commodity.commodityId, status: commodity.status === 'active' ? 'inactive' : 'active' })
+                              }
+                              toast.success(commodity.status === 'active' ? 'Komoditas dinonaktifkan untuk koperasi.' : 'Komoditas ditambahkan ke jaringan koperasi.')
+                            } catch (err) {
+                              toast.error((err as Error).message || 'Gagal mengubah status komoditas.')
+                            }
+                          }}
+                        >
+                          {commodity.status === 'active' ? 'Nonaktifkan' : 'Tambahkan'}
+                        </Button>
+                        </> : <span className="text-xs font-semibold text-slate-500">Hanya lihat</span>}
                       </div>
                     </td>
                   </tr>
@@ -147,7 +198,7 @@ export function CommoditiesPage() {
         </div>
       </section>
 
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog open={isDialogOpen && (user?.role === 'Admin' || user?.role === 'Koperasi')} onOpenChange={setIsDialogOpen}>
         <DialogContent className="bg-white sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>{form._id ? 'Ubah komoditas' : 'Tambah komoditas'}</DialogTitle>
@@ -166,6 +217,7 @@ export function CommoditiesPage() {
               try {
                 if (form._id) {
                   await updateCommodity({
+                    token: getAuthToken(),
                     commodityId: form._id as any,
                     name: form.name,
                     unit: form.unit,
@@ -174,6 +226,7 @@ export function CommoditiesPage() {
                   })
                 } else {
                   await createCommodity({
+                    token: getAuthToken(),
                     name: form.name,
                     unit: form.unit,
                     minimumQualityScore: Number(form.minimumQualityScore),
@@ -233,7 +286,7 @@ export function CommoditiesPage() {
         onConfirm={async () => {
           if (!commodityToDelete) return
           try {
-            await deleteCommodity({ commodityId: commodityToDelete.id as any })
+            await deleteCommodity({ token: getAuthToken(), commodityId: commodityToDelete.id as any })
             if (form._id === commodityToDelete.id) setForm(emptyCommodityForm)
             toast.success('Komoditas berhasil dihapus.')
           } catch (err) {

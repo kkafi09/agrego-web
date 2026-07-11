@@ -41,13 +41,17 @@ const emptyMemberForm: MemberFormState = {
 export function MembersPage() {
   const currentKoperasi = useQuery(api.koperasi.getCurrentKoperasi, { token: getAuthToken() })
   const koperasiId = currentKoperasi?._id
-  const commodities = useQuery(api.masterData.searchCommodities, { searchTerm: '' })
+  const commodities = useQuery(
+    api.masterData.searchCommodities,
+    koperasiId ? { searchTerm: '', token: getAuthToken(), koperasiId } : 'skip',
+  )
 
   const [searchTerm, setSearchTerm] = useState('')
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [form, setForm] = useState<MemberFormState>(emptyMemberForm)
   const [memberToDelete, setMemberToDelete] = useState<{ id: string; name: string } | null>(null)
+  const [memberToVerify, setMemberToVerify] = useState<{ id: string; name: string } | null>(null)
 
   const memberList = useQuery(
     api.masterData.searchMembers,
@@ -57,6 +61,7 @@ export function MembersPage() {
   const createMember = useMutation(api.masterData.createMember)
   const updateMember = useMutation(api.masterData.updateMember)
   const deleteMember = useMutation(api.masterData.deleteMember)
+  const verifyMember = useMutation(api.masterData.verifyMember)
 
   const hasCommodities = Boolean(commodities?.length)
   const isLoading = memberList === undefined
@@ -207,6 +212,15 @@ export function MembersPage() {
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex justify-end gap-2">
+                            {member.status !== 'active' ? <Button
+                              variant="outline"
+                              size="sm"
+                              type="button"
+                              className="border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                              onClick={() => setMemberToVerify({ id: member._id, name: member.name })}
+                            >
+                              Verifikasi
+                            </Button> : null}
                             <Button variant="outline" size="sm" type="button" onClick={() => openEditDialog(member)}>
                               Edit
                             </Button>
@@ -287,6 +301,25 @@ export function MembersPage() {
           </form>
         </DialogContent>
       </Dialog>
+      <ConfirmationDialog
+        isOpen={Boolean(memberToVerify)}
+        title="Verifikasi anggota?"
+        message={`Pastikan data ${memberToVerify?.name ?? ''} sudah benar sebelum mengaktifkan anggota ini.`}
+        confirmLabel="Verifikasi"
+        onCancel={() => setMemberToVerify(null)}
+        onConfirm={async () => {
+          if (!memberToVerify) return
+          try {
+            await verifyMember({ token: getAuthToken(), memberId: memberToVerify.id as any })
+            toast.success('Anggota berhasil diverifikasi.')
+          } catch (err) {
+            toast.error((err as Error).message || 'Gagal memverifikasi anggota.')
+          } finally {
+            setMemberToVerify(null)
+          }
+        }}
+      />
+
       <ConfirmationDialog
         isOpen={Boolean(memberToDelete)}
         title="Hapus anggota?"

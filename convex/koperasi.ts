@@ -98,7 +98,10 @@ export const saveDefaultKoperasi = mutation({
       throw new Error("Admin koperasi tidak ditemukan.");
     }
 
-    let profile = await ctx.db.query("koperasiProfiles").first();
+    let profile = await ctx.db
+      .query("koperasiProfiles")
+      .withIndex("by_admin", (q) => q.eq("adminId", actor._id))
+      .first();
     if (profile) {
       await ctx.db.patch(profile._id, {
         name: args.name,
@@ -122,5 +125,76 @@ export const saveDefaultKoperasi = mutation({
         createdAt: Date.now(),
       });
     }
+  },
+});
+
+export const getCooperativeOverview = query({
+  args: { token: v.string() },
+  handler: async (ctx, args) => {
+    const actor = await requireRole(ctx, args.token, ["cooperative"]);
+    const profile = await ctx.db
+      .query("koperasiProfiles")
+      .withIndex("by_admin", (q) => q.eq("adminId", actor._id))
+      .first();
+    if (!profile) return null;
+
+    const [members, relations, contracts, pools] = await Promise.all([
+      ctx.db.query("members").withIndex("by_koperasi", (q) => q.eq("koperasiId", profile._id)).collect(),
+      ctx.db.query("koperasiCommodities").withIndex("by_koperasi", (q) => q.eq("koperasiId", profile._id)).collect(),
+      ctx.db.query("contracts").withIndex("by_status", (q) => q.eq("status", "active")).collect(),
+      ctx.db.query("supplyPools").withIndex("by_koperasi", (q) => q.eq("koperasiId", profile._id)).collect(),
+    ]);
+    const activeCommodityIds = new Set(
+      relations.filter((relation) => relation.status === "active").map((relation) => relation.commodityId),
+    );
+    const activeContracts = contracts.filter((contract) => activeCommodityIds.has(contract.commodityId));
+    const allocatedWeightKg = pools
+      .filter((pool) => pool.status === "allocated")
+      .reduce((total, pool) => total + pool.allocatedWeightKg, 0);
+
+    return {
+      profile,
+      memberCount: members.length,
+      activeCommodityCount: activeCommodityIds.size,
+      activeContractCount: activeContracts.length,
+      allocatedWeightKg,
+    };
+  },
+});
+
+export const listCooperativeCommodityCatalog = query({
+  args: { token: v.string() },
+  handler: async (ctx, args) => {
+    const actor = await requireRole(ctx, args.token, ["cooperative"]);
+    const profile = await ctx.db
+      .query("koperasiProfiles")
+      .withIndex("by_admin", (q) => q.eq("adminId", actor._id))
+      .first();
+    if (!profile) return [];
+
+    const [commodities, relations, allRelations] = await Promise.all([
+      ctx.db.query("commodities").collect(),
+      ctx.db.query("koperasiCommodities").withIndex("by_koperasi", (q) => q.eq("koperasiId", profile._id)).collect(),
+      ctx.db.query("koperasiCommodities").collect(),
+    ]);
+    const ownRelations = new Map(relations.map((relation) => [relation.commodityId, relation]));
+
+    return commodities
+      .filter((commodity) => commodity.status !== "inactive")
+      .map((commodity) => {
+        const relation = ownRelations.get(commodity._id);
+        const activeProviderCount = allRelations.filter(
+          (item) => item.commodityId === commodity._id && item.status === "active",
+        ).length;
+        return {
+          commodityId: commodity._id,
+          name: commodity.name,
+          unit: commodity.unit,
+          minimumQualityScore: relation?.minimumQualityScore ?? commodity.minimumQualityScore,
+          status: relation?.status ?? "not_added",
+          activeProviderCount,
+          otherActiveProviderCount: Math.max(activeProviderCount - (relation?.status === "active" ? 1 : 0), 0),
+        };
+      });
   },
 });

@@ -113,15 +113,19 @@ export const activeContractProgress = query({
     token: v.string(),
   },
   handler: async (ctx, args) => {
-    await requireRole(ctx, args.token, ["cooperative", "buyer", "admin"]);
+    const actor = await requireRole(ctx, args.token, ["cooperative", "buyer", "admin"]);
     const contracts = await ctx.db
       .query("contracts")
       .withIndex("by_status", (q) => q.eq("status", "active"))
       .collect();
 
+    const visibleContracts = actor.role === "buyer"
+      ? contracts.filter((contract) => contract.buyerId === actor._id)
+      : contracts;
+
     const progress = [];
 
-    for (const contract of contracts) {
+    for (const contract of visibleContracts) {
       const [commodity, buyer, allocations] = await Promise.all([
         ctx.db.get(contract.commodityId),
         ctx.db.get(contract.buyerId),
@@ -144,7 +148,7 @@ export const activeContractProgress = query({
         contractId: contract._id,
         contractNumber: contract.contractNumber,
         buyerName: buyer?.name ?? "Buyer tidak ditemukan",
-        commodityName: commodity?.name ?? "Komoditas tidak ditemukan",
+        commodityName: commodity?.name ?? contract.commodityKey ?? "Komoditas tidak ditemukan",
         targetVolumeKg: contract.targetVolumeKg,
         fulfilledKg,
         remainingKg: Math.max(contract.targetVolumeKg - fulfilledKg, 0),
@@ -188,14 +192,7 @@ export const supplyPoolStatuses = query({
           .query("supplyPools")
           .withIndex("by_contract", (q) => q.eq("contractId", contract._id))
           .collect(),
-        ctx.db
-          .query("deposits")
-          .withIndex("by_koperasi_and_commodity", (q) =>
-            q
-              .eq("koperasiId", koperasi._id)
-              .eq("commodityId", contract.commodityId),
-          )
-          .collect(),
+        ctx.db.query("deposits").withIndex("by_koperasi_and_commodity", (q) => q.eq("koperasiId", koperasi._id).eq("commodityId", contract.commodityId)).collect(),
       ]);
 
       const allocatedDeposits = await Promise.all(
@@ -226,7 +223,7 @@ export const supplyPoolStatuses = query({
       statuses.push({
         contractId: contract._id,
         contractNumber: contract.contractNumber,
-        commodityName: commodity?.name ?? "Komoditas tidak ditemukan",
+        commodityName: commodity?.name ?? contract.commodityKey ?? "Komoditas tidak ditemukan",
         targetVolumeKg: contract.targetVolumeKg,
         allocatedWeightKg,
         candidateWeightKg,

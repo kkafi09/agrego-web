@@ -1,8 +1,10 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { requireRole } from "./auth";
 
 export const createDeposit = mutation({
   args: {
+    token: v.string(),
     koperasiId: v.id("koperasiProfiles"),
     memberId: v.id("members"),
     commodityId: v.id("commodities"),
@@ -14,6 +16,7 @@ export const createDeposit = mutation({
     notes: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    const actor = await requireRole(ctx, args.token, ["cooperative"]);
     const [koperasi, member, commodity] = await Promise.all([
       ctx.db.get(args.koperasiId),
       ctx.db.get(args.memberId),
@@ -24,12 +27,28 @@ export const createDeposit = mutation({
       throw new Error("Profil koperasi tidak ditemukan.");
     }
 
+    if (koperasi.adminId !== actor._id) {
+      throw new Error("Akses koperasi ditolak.");
+    }
+
     if (!member || member.koperasiId !== args.koperasiId) {
       throw new Error("Anggota tidak ditemukan pada koperasi ini.");
     }
 
     if (!commodity) {
       throw new Error("Komoditas tidak ditemukan.");
+    }
+
+    if (commodity.status === "inactive") {
+      throw new Error("Komoditas sedang tidak aktif.");
+    }
+
+    const relation = await ctx.db
+      .query("koperasiCommodities")
+      .withIndex("by_koperasi_and_commodity", (q) => q.eq("koperasiId", args.koperasiId).eq("commodityId", args.commodityId))
+      .first();
+    if (!relation || relation.status !== "active") {
+      throw new Error("Komoditas belum diaktifkan untuk koperasi ini.");
     }
 
     if (args.weightKg <= 0) {

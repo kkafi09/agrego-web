@@ -45,7 +45,7 @@ export const contractsNeedingAllocation = query({
         return {
           contractId: contract._id,
           contractNumber: contract.contractNumber,
-          commodityName: commodity?.name ?? "Komoditas tidak ditemukan",
+          commodityName: commodity?.name ?? contract.commodityKey ?? "Komoditas tidak ditemukan",
           targetVolumeKg: contract.targetVolumeKg,
           allocatedWeightKg,
           remainingKg: Math.max(contract.targetVolumeKg - allocatedWeightKg, 0),
@@ -76,11 +76,7 @@ export const availableDepositsForContract = query({
 
     const deposits = await ctx.db
       .query("deposits")
-      .withIndex("by_koperasi_and_commodity", (q) =>
-        q
-          .eq("koperasiId", koperasi._id)
-          .eq("commodityId", contract.commodityId),
-      )
+      .withIndex("by_koperasi_and_commodity", (q) => q.eq("koperasiId", koperasi._id).eq("commodityId", contract.commodityId))
       .collect();
 
     const minimumGrade = contract.minimumQualityGrade ?? legacyGrade(contract.minimumQualityScore);
@@ -143,6 +139,10 @@ export const allocateDepositToContract = mutation({
 
     if (deposit.commodityId !== contract.commodityId) {
       throw new Error("Komoditas setoran tidak cocok dengan kontrak.");
+    }
+    const relation = await ctx.db.query("koperasiCommodities").withIndex("by_koperasi_and_commodity", (q) => q.eq("koperasiId", koperasi._id).eq("commodityId", contract.commodityId)).first();
+    if (!relation || relation.status !== "active") {
+      throw new Error("Komoditas setoran tidak aktif untuk koperasi ini.");
     }
 
     const passedQc = deposit.status === "quality_checked" ||

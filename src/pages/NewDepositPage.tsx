@@ -29,7 +29,10 @@ export function NewDepositPage({ goToPage, user }: { goToPage: (page: Page) => v
   const currentKoperasi = useQuery(api.koperasi.getCurrentKoperasi, { token: getAuthToken() })
   const koperasiId = currentKoperasi?._id
   const members = useQuery(api.masterData.searchMembers, koperasiId ? { koperasiId, searchTerm: '' } : 'skip')
-  const commodities = useQuery(api.masterData.searchCommodities, { searchTerm: '' })
+  const commodities = useQuery(
+    api.masterData.searchCommodities,
+    koperasiId ? { searchTerm: '', token: getAuthToken(), koperasiId } : 'skip',
+  )
   const createDeposit = useMutation(api.deposits.createDeposit)
   const [form, setForm] = useState<DepositFormState>({
     memberId: '',
@@ -73,6 +76,7 @@ export function NewDepositPage({ goToPage, user }: { goToPage: (page: Page) => v
 
             try {
               await createDeposit({
+                token: getAuthToken(),
                 koperasiId,
                 memberId: form.memberId as any,
                 commodityId: form.commodityId as any,

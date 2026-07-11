@@ -24,7 +24,7 @@ import {
 } from './shared'
 
 export function NewContractPage({ goToPage, user }: { goToPage: (page: Page) => void; user: AuthUser | null }) {
-  const commodities = useQuery(api.masterData.searchCommodities, { searchTerm: '' })
+  const commodities = useQuery(api.masterData.searchCommodities, { searchTerm: '', token: getAuthToken() })
   const createContract = useMutation(api.contracts.createContract)
   const [form, setForm] = useState<ContractFormState>({
     commodityId: '',
@@ -39,6 +39,17 @@ export function NewContractPage({ goToPage, user }: { goToPage: (page: Page) => 
   const [, setSaved] = useState(false)
   const canSubmit = Boolean(commodities?.length)
   const canManageCommodities = user ? rolePermissions[user.role].includes('commodities') : false
+  const selectedCommodity = commodities?.find((commodity) => commodity._id === form.commodityId)
+  const targetVolume = Number(form.targetKg) || 0
+  const pricePerKg = Number(form.pricePerKg) || 0
+  const estimatedValue = targetVolume * pricePerKg
+  const formattedDate = form.deadline
+    ? new Intl.DateTimeFormat('id-ID', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+      }).format(new Date(form.deadline))
+    : 'Belum diisi'
 
   if (user?.role !== 'Buyer') {
     return <p className="rounded-2xl border border-slate-200 bg-white p-5 text-sm font-bold text-rose-700">Hanya Buyer yang dapat membuat kontrak.</p>
@@ -174,16 +185,44 @@ export function NewContractPage({ goToPage, user }: { goToPage: (page: Page) => 
             Simpan Kontrak
           </Button>
         </form>
-        <aside className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:sticky lg:top-24">
-          <div className="grid gap-1 [&_h2]:text-lg [&_h2]:font-black [&_h2]:text-slate-950">
-            <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-700">Preview</p>
-            <h2>{commodities?.find((commodity) => commodity._id === form.commodityId)?.name || '-'}</h2>
+        <aside className="grid gap-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:sticky lg:top-24" aria-label="Ringkasan permintaan kontrak">
+          <div className="grid gap-1">
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-emerald-700">Ringkasan permintaan</p>
+            <h2 className="text-xl font-black text-slate-950">{selectedCommodity?.name || 'Komoditas belum dipilih'}</h2>
+            <p className="text-sm font-semibold text-slate-500">Periksa kembali kebutuhan pembelian sebelum menyimpan kontrak.</p>
           </div>
-          <dl>
-            <div><dt>Jangkauan</dt><dd>Supply pool lintas-koperasi</dd></div>
-            <div><dt>Target</dt><dd>{form.targetKg || '0'} kg</dd></div>
-            <div><dt>Minimum Grade</dt><dd>{form.minimumQuality || '-'}</dd></div>
-          </dl>
+
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+            <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-4 sm:col-span-2 lg:col-span-1">
+              <p className="text-xs font-bold uppercase tracking-wide text-emerald-700">Nilai estimasi</p>
+              <strong className="mt-1 block text-2xl font-black text-slate-950">Rp{estimatedValue.toLocaleString('id-ID')}</strong>
+              <p className="mt-1 text-xs font-semibold text-slate-500">Target volume × harga per kg</p>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-xs font-semibold text-slate-500">Target volume</p>
+              <strong className="mt-1 block text-sm font-black text-slate-950">{targetVolume.toLocaleString('id-ID')} kg</strong>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-xs font-semibold text-slate-500">Harga per kg</p>
+              <strong className="mt-1 block text-sm font-black text-slate-950">{pricePerKg ? `Rp${pricePerKg.toLocaleString('id-ID')}` : 'Belum diisi'}</strong>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-xs font-semibold text-slate-500">Minimum grade</p>
+              <strong className="mt-1 block text-sm font-black text-slate-950">{form.minimumQuality ? `Grade ${form.minimumQuality}` : 'Belum dipilih'}</strong>
+            </div>
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+              <p className="text-xs font-semibold text-slate-500">Tenggat pemenuhan</p>
+              <strong className="mt-1 block text-sm font-black text-slate-950">{formattedDate}</strong>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-blue-100 bg-blue-50 p-4">
+            <p className="text-xs font-bold uppercase tracking-wide text-blue-700">Sumber pasokan</p>
+            <strong className="mt-1 block text-sm font-black text-slate-950">
+              {selectedCommodity?.koperasiCount ? `${selectedCommodity.koperasiCount} koperasi aktif` : 'Belum ada koperasi aktif'}
+            </strong>
+            <p className="mt-1 text-xs font-semibold leading-relaxed text-slate-600">Supply pool dapat menggabungkan stok lintas koperasi.</p>
+          </div>
         </aside>
       </section>
     </>

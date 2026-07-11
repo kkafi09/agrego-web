@@ -56,6 +56,9 @@ export default defineSchema({
     .index("by_koperasi", ["koperasiId"])
     .index("by_phone", ["phone"]),
   commodities: defineTable({
+    koperasiId: v.optional(v.id("koperasiProfiles")),
+    commodityKey: v.optional(v.string()),
+    createdByKoperasiId: v.optional(v.id("koperasiProfiles")),
     name: v.string(),
     unit: v.string(),
     qualityParameters: v.array(v.string()),
@@ -73,11 +76,28 @@ export default defineSchema({
     status: v.optional(v.union(v.literal("active"), v.literal("inactive"))),
     createdAt: v.number(),
     updatedAt: v.optional(v.number()),
-  }).index("by_name", ["name"]),
+  })
+    .index("by_name", ["name"])
+    .index("by_status", ["status"])
+    .index("by_koperasi", ["koperasiId"])
+    .index("by_commodity_key", ["commodityKey"])
+    .index("by_created_by_koperasi", ["createdByKoperasiId"]),
+  koperasiCommodities: defineTable({
+    koperasiId: v.id("koperasiProfiles"),
+    commodityId: v.id("commodities"),
+    status: v.union(v.literal("active"), v.literal("inactive")),
+    minimumQualityScore: v.optional(v.number()),
+    createdAt: v.number(),
+    updatedAt: v.optional(v.number()),
+  })
+    .index("by_koperasi", ["koperasiId"])
+    .index("by_commodity", ["commodityId"])
+    .index("by_koperasi_and_commodity", ["koperasiId", "commodityId"]),
   contracts: defineTable({
     buyerId: v.id("users"),
     koperasiId: v.optional(v.id("koperasiProfiles")),
     commodityId: v.id("commodities"),
+    commodityKey: v.optional(v.string()),
     contractNumber: v.string(),
     title: v.optional(v.string()),
     targetVolumeKg: v.number(),

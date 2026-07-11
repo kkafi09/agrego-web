@@ -16,6 +16,7 @@ export const createContract = mutation({
   args: {
     token: v.string(),
     commodityId: v.id("commodities"),
+    commodityKey: v.optional(v.string()),
     contractNumber: v.string(),
     title: v.optional(v.string()),
     targetVolumeKg: v.number(),
@@ -30,6 +31,19 @@ export const createContract = mutation({
 
     if (!commodity) {
       throw new Error("Komoditas tidak ditemukan.");
+    }
+
+    if (commodity.status === "inactive") {
+      throw new Error("Komoditas sedang tidak aktif.");
+    }
+
+    const activeRelation = await ctx.db
+      .query("koperasiCommodities")
+      .withIndex("by_commodity", (q) => q.eq("commodityId", args.commodityId))
+      .filter((q) => q.eq(q.field("status"), "active"))
+      .first();
+    if (!activeRelation) {
+      throw new Error("Komoditas belum tersedia di koperasi mana pun.");
     }
 
     if (args.targetVolumeKg <= 0 || args.pricePerKg <= 0) {
@@ -101,7 +115,7 @@ export const listAllContracts = query({
         title: contract.title ?? null,
         buyerName: buyer?.name ?? "Buyer tidak ditemukan",
         koperasiName: koperasi?.name ?? "Koperasi tidak ditemukan",
-        commodityName: commodity?.name ?? "Komoditas tidak ditemukan",
+        commodityName: commodity?.name ?? contract.commodityKey ?? "Komoditas tidak ditemukan",
         targetVolumeKg: contract.targetVolumeKg,
         fulfilledVolumeKg: contract.fulfilledVolumeKg ?? 0,
         fulfillmentPercent: contract.fulfillmentPercent ?? 0,
@@ -158,7 +172,7 @@ export const listContracts = query({
             contractNumber: contract.contractNumber,
             title: contract.title ?? null,
             buyerName: buyer?.name ?? "Buyer tidak ditemukan",
-            commodityName: commodity?.name ?? "Komoditas tidak ditemukan",
+            commodityName: commodity?.name ?? contract.commodityKey ?? "Komoditas tidak ditemukan",
             targetVolumeKg: contract.targetVolumeKg,
             fulfilledVolumeKg: contract.fulfilledVolumeKg ?? 0,
             fulfillmentPercent: contract.fulfillmentPercent ?? 0,
@@ -227,7 +241,7 @@ export const getContractDetail = query({
       contractNumber: contract.contractNumber,
       title: contract.title ?? null,
       buyerName: buyer?.name ?? "Buyer tidak ditemukan",
-      commodityName: commodity?.name ?? "Komoditas tidak ditemukan",
+      commodityName: commodity?.name ?? contract.commodityKey ?? "Komoditas tidak ditemukan",
       targetVolumeKg: contract.targetVolumeKg,
       fulfilledVolumeKg,
       fulfillmentPercent,

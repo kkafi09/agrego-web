@@ -178,7 +178,7 @@ function App() {
                     <Route path={getPagePath('resetPassword')} element={<ResetPasswordPage goToPage={goToPage} />} />
                     <Route path={getPagePath('profile')} element={requireAuth(<ProfilePage user={user} onSave={setUser} />)} />
                     <Route path={getPagePath('members')} element={requireAuth(<MembersPage />)} />
-                    <Route path={getPagePath('commodities')} element={requireAuth(<CommoditiesPage />)} />
+                    <Route path={getPagePath('commodities')} element={requireAuth(<CommoditiesPage user={user} />)} />
                     <Route path={getPagePath('cooperativeProfile')} element={requireAuth(<CooperativeProfilePage user={user} />)} />
                     <Route path="*" element={<Navigate replace to={getPagePath('dashboard')} />} />
                 </Routes>
